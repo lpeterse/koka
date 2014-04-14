@@ -20,14 +20,13 @@ module Common.File(
                   , startsWith, endsWith, splitOn
 
                   -- * File names
-                  , FileName
                   , basename, notdir, notext, joinPath, joinPaths, extname, dirname
                   , splitPath, undelimPaths
                   , isPathSep, isPathDelimiter
+                  , searchPathSeparator
                   , findMaximalPrefix
                   , isAbsolute
                   , commonPathPrefix
-                  , normalizeWith
 
                   -- * Files
                   , FileTime, fileTime0, maxFileTime, maxFileTimes
@@ -39,7 +38,6 @@ module Common.File(
 
 import Data.List        ( intersperse )
 import Data.Char        ( toLower, isSpace )
-import Platform.Config  ( pathSep, pathDelimiter )
 import qualified Platform.Runtime as B ( copyBinaryFile )
 import Common.Failure   ( raiseIO, catchIO )
  
@@ -50,6 +48,7 @@ import System.Directory ( doesFileExist, doesDirectoryExist
                         , copyFile
                         , getCurrentDirectory, getDirectoryContents
                         , createDirectoryIfMissing, canonicalizePath )
+import qualified System.FilePath    as FilePath
 
 import qualified Platform.Console as C (getProgramPath)
 import Lib.Trace
@@ -75,19 +74,13 @@ splitOn pred xs
 {--------------------------------------------------------------------------
   File names
 --------------------------------------------------------------------------}
--- | File name
-type FileName = FilePath
 
 -- | Remove the extension and directory part
-basename :: FileName -> FileName
-basename fname
-  = case dropWhile (/='.') (reverse (notdir fname)) of
-      '.':rbase -> reverse rbase
-      _         -> fname
-
+basename :: FilePath -> String
+basename  = FilePath.takeBaseName
 
 -- | Get the file extension
-extname :: FileName -> FileName
+extname :: FilePath -> FilePath
 extname fname
   = let (pre,post) = span (/='.') (reverse (notdir fname))
     in if null post
@@ -95,17 +88,17 @@ extname fname
         else ("." ++ reverse pre) 
 
 -- | Return the directory prefix (including last separator if present)
-dirname :: FileName -> FileName
+dirname :: FilePath -> FilePath
 dirname fname
   = joinPaths (init (splitPath fname))
 
 -- | Remove the directory prefix
-notdir :: FileName -> FileName
+notdir :: FilePath -> FilePath
 notdir fname
   = last (splitPath fname)
 
 
-notext :: FileName -> FileName
+notext :: FilePath -> FilePath
 notext fname
   = reverse (drop (length (extname fname)) (reverse fname))  
 
@@ -138,51 +131,26 @@ splitPath fdir
 
 joinPath :: FilePath -> FilePath -> FilePath
 joinPath p1 p2
-  = joinPaths [p1,p2]
+  = FilePath.combine p1 p2
 
 -- | Join a list of paths into one path
 joinPaths :: [FilePath] -> FilePath
-joinPaths dirs
-  = concat 
-  $ intersperse [pathSep] 
-  $ normalize
-  $ filter (not . null) 
-  $ concatMap splitPath dirs
-  where
-    normalize []            = []
-    normalize (p:".":ps)    = normalize (p:ps)
-    normalize (p:"..":ps)   | p == "."  = normalize ("..":ps)
-                            | p == ".." = p : normalize ("..":ps)
-                            | otherwise = normalize ps
-    normalize (p:ps)        = p : normalize ps
-
--- | Normalize path separators
-normalize :: FilePath -> FilePath
-normalize path
-  = normalizeWith pathSep path
-
--- | Normalize path separators with a specified path separator
-normalizeWith :: Char -> FilePath -> FilePath
-normalizeWith newSep path
-  = norm "" path
-  where
-    norm acc "" = reverse acc
-    norm acc (c:cs)
-      = if (isPathSep c) 
-         then norm (newSep:acc) (dropWhile isPathSep cs)
-         else norm (c:acc) cs
-
+joinPaths
+  = foldl joinPath ""
 
 -- | Is this a file separator.
 isPathSep :: Char -> Bool
 isPathSep c
-  = (c == '/' || c == '\\')
+  = FilePath.isPathSeparator c
 
 -- | Is this a path delimiter? (@;@ (and @:@ too on unix)
 isPathDelimiter :: Char -> Bool
 isPathDelimiter c
-  = (c == ';' || c == pathDelimiter)
+  = FilePath.isSearchPathSeparator c
 
+searchPathSeparator :: Char
+searchPathSeparator
+  = FilePath.searchPathSeparator
 
 
 {--------------------------------------------------------------------------
@@ -206,7 +174,7 @@ runSystem command
          ExitSuccess   -> return ()
 
 runSystemEx command
-  = system (normalize command)
+  = system (FilePath.normalise command)
 
 -- | Compare two file modification times (uses 0 for non-existing files)
 fileTimeCompare :: FilePath -> FilePath -> IO Ordering

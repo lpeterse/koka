@@ -20,7 +20,6 @@ module Compiler.Package( Packages, PackageName
 import Data.Char        ( toLower )
 import Lib.PPrint
 import Data.List        ( intersperse, replicate, sort )
-import Platform.Config  ( pathSep, pathDelimiter )
 import Common.Failure   ( raiseIO, catchIO )
  
 import System.Directory ( doesFileExist, doesDirectoryExist

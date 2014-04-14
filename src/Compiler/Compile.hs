@@ -32,6 +32,7 @@ import Lib.Trace              ( trace )
 import Data.Char              ( isAlphaNum )
 
 import System.Directory       ( createDirectoryIfMissing, canonicalizePath )
+import System.FilePath        ( normalise )
 import Data.List              ( isPrefixOf )
 import Control.Monad          ( when )
 import Common.Failure
@@ -71,7 +72,7 @@ import Compiler.Module
 -- needed for code generation
 import Data.Char              ( toUpper )
 import Lib.PPrint             hiding (dquote)
-import Platform.Config        ( exeExtension, pathSep, sourceExtension )
+import Platform.Config        ( exeExtension, sourceExtension )
 
 import Backend.CSharp.FromCore( csharpFromCore )
 import Backend.JavaScript.FromCore( javascriptFromCore )
@@ -302,7 +303,7 @@ compileProgram term flags modules compileTarget fname program
 compileProgramFromFile :: Terminal -> Flags -> Modules -> CompileTarget () -> FilePath -> FilePath -> IOErr Loaded
 compileProgramFromFile term flags modules compileTarget rootPath stem
   = do let fname = joinPath rootPath stem
-       liftIO $ termPhaseDoc term (color (colorInterpreter (colorScheme flags)) (text "compile:") <+> color (colorSource (colorScheme flags)) (text (normalizeWith '/' fname)))
+       liftIO $ termPhaseDoc term (color (colorInterpreter (colorScheme flags)) (text "compile:") <+> color (colorSource (colorScheme flags)) (text (normalise fname)))
        liftIO $ termPhase term ("parsing " ++ fname)
        exist <- liftIO $ doesFileExist fname
        if (exist) then return () else liftError $ errorMsg (errorFileNotFound flags fname)

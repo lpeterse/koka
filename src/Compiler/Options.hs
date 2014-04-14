@@ -24,7 +24,7 @@ import Data.Char              ( toUpper )
 import Data.List              ( intersperse )
 import System.Environment     ( getArgs )
 import Platform.GetOptions        
-import Platform.Config        ( pathDelimiter, version, compiler, buildTime, buildVariant, exeExtension, programName )
+import Platform.Config        ( version, compiler, buildTime, buildVariant, exeExtension, programName )
 import Lib.PPrint
 import Lib.Printer
 import Common.Failure         ( raiseIO )
@@ -95,10 +95,10 @@ data Flags
          , colorScheme      :: ColorScheme
          , outDir           :: FilePath
          , includePath      :: [FilePath]
-         , csc              :: FileName
-         , node             :: FileName
+         , csc              :: FilePath
+         , node             :: FilePath
          , editor           :: String
-         , redirectOutput   :: FileName
+         , redirectOutput   :: FilePath
          , maxStructFields  :: Int
          , outHtml          :: Int
          , htmlBases        :: [(String,String)]
@@ -437,7 +437,7 @@ showIncludeInfo flags
   = hang 2 (infotext "include path:" <$> prettyIncludePath flags) -- text (if null paths then "<empty>" else paths))
   where
     paths 
-      = concat $ intersperse [pathDelimiter] (includePath flags)
+      = concat $ intersperse [searchPathSeparator] (includePath flags)
 
     colors 
       = colorSchemeFromFlags flags
