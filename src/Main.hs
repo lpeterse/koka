@@ -5,11 +5,14 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Main module.
--}
------------------------------------------------------------------------------
+
+{----------------------------------------------------------------------------
+    Main module
+----------------------------------------------------------------------------}
+
 module Main where
+
+import Data.List              ( isPrefixOf )
 
 import System.Exit            ( exitFailure )
 import Control.Monad          ( when )
@@ -31,54 +34,45 @@ import Kind.Assumption        ( kgammaFilter )
 import Type.Assumption        ( ppGamma, gammaFilter )
 import Type.Pretty            ( ppScheme, Env(context,importsMap) )
 
-
-
 -- compiled entry
+main     :: IO ()
 main      = mainArgs ""
 
 -- ghci entry
-maing     = maingg "" 
-maindoc   = maingg "--html"
-mainjs    = maingg "--target=js"  
-maincs    = maingg "--target=cs"  
-
-maingg extraOptions
-  = mainArgs ("-ilib -itest --verbose " ++ extraOptions)
-
--- hugs entry
+maing     = mainArgs "-ilib -itest --verbose"
+maindoc   = mainArgs "-ilib -itest --verbose --html"
+mainjs    = mainArgs "-ilib -itest --verbose --target=js"
+maincs    = mainArgs "-ilib -itest --verbose --target=cs"
 mainh     = mainArgs "-ilib -itest --console=raw"
 
-
+mainArgs :: String -> IO ()
 mainArgs args
-  = do (flags,mode) <- getOptions args
-       let with = if (not (null (redirectOutput flags)))
-                   then withFileNoColorPrinter (redirectOutput flags)
-                   else if (console flags == "html")
-                    then withHtmlColorPrinter
-                   else if (console flags == "ansi") 
-                    then withColorPrinter 
-                    else withNoColorPrinter  
-       with (mainMode flags mode)
-    `catchIO` \err ->
-    do if ("ExitFailure" `isPrefix` err)
-        then return ()
-        else putStr err
-       exitFailure
-  where
-    isPrefix s t  = (s == take (length s) t)
+  = do (flags, mode) <- getOptions args
+       let with | not $ null $ redirectOutput flags
+                = withFileNoColorPrinter (redirectOutput flags)
+                | console flags == "html"
+                = withHtmlColorPrinter
+                | console flags == "ansi"
+                = withColorPrinter
+                | otherwise
+                = withNoColorPrinter
+       with (mainMode flags mode) `catchIO` \err ->
+         do if ("ExitFailure" `isPrefixOf` err)
+              then return ()
+              else putStr err
+            exitFailure
 
 mainMode :: Flags -> Mode -> ColorPrinter -> IO ()
 mainMode flags mode p
   = case mode of
-     ModeHelp       
-      -> showHelp flags p 
-     ModeVersion
+      ModeHelp
+      -> showHelp flags p
+      ModeVersion
       -> showVersion p
-     ModeCompiler files 
+      ModeCompiler files
       -> mapM_ (compile p flags) files
-     ModeInteractive files 
-      -> interpret p flags files 
-
+      ModeInteractive files
+      -> interpret p flags files
 
 compile :: ColorPrinter -> Flags -> FilePath -> IO ()
 compile p flags fname
@@ -89,7 +83,6 @@ compile p flags fname
          Left msg 
            -> do putPrettyLn p (ppErrorMessage (showSpan flags) cscheme msg)
                  exitFailure
-
          Right (Loaded gamma kgamma synonyms newtypes constructors _ imports _
                 (Module modName _ _ _ _ _warnings rawProgram core _ modTime) _ 
                , warnings)
@@ -104,11 +97,6 @@ compile p flags fname
                        )
                  when (showTypeSigs flags)
                    (do putPrettyLn p (ppGamma (prettyEnv flags modName imports) (gammaFilter modName gamma)))
-                 {-
-                 when (showCore flags)
-                   (do putPrettyLn p (prettyCore (prettyEnv flags modName imports) core)) 
-                 -}
-                  
   where
     term
       = Terminal (putErrorMessage p (showSpan flags) cscheme) 
@@ -123,7 +111,6 @@ compile p flags fname
     prettyEnv flags ctx imports
       = (prettyEnvFromFlags flags){ context = ctx, importsMap = imports }
 
-
 putScheme p env tp
   = putPrettyLn p (ppScheme env tp)
 
@@ -136,4 +123,3 @@ putPhase p cscheme msg
 putPrettyLn p doc
   = do writePrettyLn p doc
        writeLn p ""
-
