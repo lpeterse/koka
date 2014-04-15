@@ -79,8 +79,8 @@ notdir
   = FilePath.takeFileName
 
 notext :: FilePath -> FilePath
-notext fname
-  = reverse (drop (length (extname fname)) (reverse fname))  
+notext
+  = FilePath.dropExtensions
 
 -- | Split a (semi-)colon separated list of directories into a directory list
 undelimPaths :: String -> [FilePath]
