@@ -16,12 +16,9 @@ module Common.File(
                   , runSystem, runSystemRaw
                   , getProgramPath, getInstallDir
 
-                  -- * Strings
-                  , splitOn
-
                   -- * File names
                   , basename, notdir, notext, joinPath, joinPaths, extname, dirname
-                  , splitPath, undelimPaths
+                  , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
                   , findMaximalPrefix
@@ -54,13 +51,7 @@ import qualified Platform.Console as C (getProgramPath)
 import Lib.Trace
 import Platform.Filetime
 
-splitOn pred xs
-  = normalize [] xs
-  where
-    normalize acc [] = reverse acc
-    normalize acc xs 
-      = case (span (not . pred) xs) of
-          (pre,post) -> normalize (pre:acc) (dropWhile pred post)
+
 
 
 {--------------------------------------------------------------------------
@@ -82,12 +73,12 @@ extname fname
 -- | Return the directory prefix (including last separator if present)
 dirname :: FilePath -> FilePath
 dirname fname
-  = joinPaths (init (splitPath fname))
+  = joinPaths (init (splitDirectories fname))
 
 -- | Remove the directory prefix
 notdir :: FilePath -> FilePath
 notdir fname
-  = last (splitPath fname)
+  = last (splitDirectories fname)
 
 
 notext :: FilePath -> FilePath
@@ -113,13 +104,12 @@ undelimPaths xs
                      else reverse (reverse p:ps)
           (c:cs) | isPathDelimiter c -> normalize (reverse p:ps) "" cs
                  | otherwise         -> normalize ps (c:p) cs
- 
--- | Split a path into its directory parts
-splitPath :: FilePath -> [FilePath]
-splitPath fdir
-  = let fs = filter (not . null) $ splitOn isPathSep fdir
-    in if (null fs) then [""] else fs
-      
+
+-- FIXME: current code base cannot deal with empty result list!
+splitDirectories :: FilePath -> [FilePath]
+splitDirectories x
+  = let y = FilePath.splitDirectories x
+    in  if null y then [""] else y
 
 joinPath :: FilePath -> FilePath -> FilePath
 joinPath p1 p2
@@ -234,7 +224,7 @@ getInstallDir :: IO FilePath
 getInstallDir
   = do p <- getProgramPath
        let d  = dirname p
-           ds = splitPath d
+           ds = splitDirectories d
            result = case reverse ds of
                       ("bin":es)   -> joinPaths (reverse es)
                       (_:"out":es) -> joinPaths (reverse es)
@@ -263,7 +253,7 @@ getProgramPath
 
 commonPathPrefix :: FilePath -> FilePath -> FilePath
 commonPathPrefix s1 s2
-  = joinPaths $ map fst $ takeWhile (\(c,d) -> c == d) $ zip (splitPath s1) (splitPath s2)
+  = joinPaths $ map fst $ takeWhile (\(c,d) -> c == d) $ zip (splitDirectories s1) (splitDirectories s2)
 
 
 -- | Is a path absolute?
@@ -315,7 +305,7 @@ searchPathsEx path exts name
       = (nname : map (nname++) exts) 
 
     nname 
-      = joinPaths $ dropWhile (==".") $ splitPath name      
+      = joinPaths $ dropWhile (==".") $ splitDirectories name
 
       
 getEnvPaths :: String -> IO [FilePath]

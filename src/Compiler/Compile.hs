@@ -41,7 +41,7 @@ import Common.Range           -- ( Range, sourceName )
 import Common.Name            -- ( Name, newName, qualify, asciiEncode )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractiveModule, nameSystemCore, nameMain, nameTpWrite, nameTpIO )
 import Common.Error
-import Common.File            
+import Common.File
 import Common.ColorScheme
 import Common.Message         ( table )
 import Common.Syntax
@@ -306,8 +306,8 @@ compileProgramFromFile term flags mdls compileTarget rootPath stem
        exist <- liftIO $ doesFileExist fname
        if (exist) then return () else liftError $ errorMsg (errorFileNotFound flags fname)
        program <- lift $ parseProgramFromFile (semiInsert flags) fname
-       let isSuffix = map (\c -> if isPathSep c then '/' else c) (notext stem)
-                       `isSuffixOf` show (programName program)
+       let isSuffix = show (programName program)
+                      `isSuffixOf` map (\c -> if isPathSep c then '/' else c) (notext stem)
            ppcolor c doc = color (c (colors (prettyEnvFromFlags flags))) doc
        if (isExecutable compileTarget || isSuffix) then return ()
         else liftError $ errorMsg (ErrorGeneral (programNameRange program) 
@@ -557,7 +557,7 @@ searchPackageIface flags currentDir mbPackage name
                 if exist then return (Just reliface) 
                  else return Nothing
          Just package
-          -> searchPackages (packages flags) currentDir (head (splitPath package)) postfix 
+          -> searchPackages (packages flags) currentDir (head (splitDirectories package)) postfix 
 
 searchOutputIface :: Flags -> Name -> IO (Maybe FilePath)
 searchOutputIface flags name
@@ -895,7 +895,7 @@ packagePatch iface current imported source
       = let pre         = commonPathPrefix current target        
             currentStem = drop (length pre) current
             targetStem  = drop (length pre) target
-            relative    = concatMap (const "../") $ filter (not . null) $ splitPath currentStem      
+            relative    = concatMap (const "../") $ filter (not . null) $ splitDirectories currentStem
         in (if null relative then "./" else relative) ++ targetStem
 
     replaceWith mapping "" = ""

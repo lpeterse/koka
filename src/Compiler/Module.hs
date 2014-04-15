@@ -25,7 +25,7 @@ import Lib.PPrint
 import Common.Range           ( Range )
 import Common.Name            ( Name, newName)
 import Common.Error
-import Common.File            ( FileTime, fileTime0, maxFileTimes, splitPath )
+import Common.File            ( FileTime, fileTime0, maxFileTimes, splitDirectories )
 
 import Syntax.Syntax          
 import Static.FixityResolve   ( Fixities, fixitiesEmpty, fixitiesNew, fixitiesCompose )
@@ -99,7 +99,7 @@ loadedName ld
 
 modPackageName :: Module -> PackageName
 modPackageName mod
-  = last (splitPath (modPackageQName mod)) 
+  = last (splitDirectories (modPackageQName mod)) 
 
 modPackagePath :: Module -> PackageName
 modPackagePath mod

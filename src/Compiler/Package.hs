@@ -48,7 +48,7 @@ packagesEmpty :: Packages
 packagesEmpty = Packages [] []
 
 pkgName :: Package -> PackageName
-pkgName pkg = last $ splitPath $ pkgQualName pkg
+pkgName pkg = last $ splitDirectories $ pkgQualName pkg
 
 ---------------------------------------------------------------
 -- search packages
@@ -101,7 +101,7 @@ visiblePackages (Packages pkgs _) ccurrent
                   
     packageBase :: FilePath -> FilePath
     packageBase pkgpath
-      = case dropWhile (/=node_modules) (reverse (splitPath pkgpath)) of
+      = case dropWhile (/=node_modules) (reverse (splitDirectories pkgpath)) of
           (_node_modules:base) -> joinPaths (reverse base)
           []                   -> pkgpath -- NOTE: this can happen for roots; leaving as it is is fine    
 
@@ -113,7 +113,7 @@ visiblePackages (Packages pkgs _) ccurrent
 discoverPackages :: FilePath -> IO Packages
 discoverPackages root
   = do croot <- canonicalizePath root
-       pkgs <- walk (splitPath croot) 0 []
+       pkgs <- walk (splitDirectories croot) 0 []
        -- trace ("packages: " ++ show (ppPackages (packages pkgs))) $ return ()
        return pkgs  
   where
@@ -150,7 +150,7 @@ discoverPackages root
                                      _             -> []
                         isKokaPkg = (cname `isPrefixOf` "koka"  || "koka" `elem` keywords)
                     let local = toString $ jsFind json (JsString (if isKokaPkg then "lib" else "")) ["directories","lib"]                        
-                        pkglocal = joinPaths $ dropWhile (==".") $ splitPath local -- strip off leading "./xxx"
+                        pkglocal = joinPaths $ dropWhile (==".") $ splitDirectories local -- strip off leading "./xxx"
                         pkgdir   = joinPaths [path,cname,pkglocal] -- TODO: read from json
                         pkgname  = joinPkgs [if (n==0) then "" else show n,pname,cname]
                     -- trace ("read package: " ++ cname ++ ": " ++ local ++ ": " ++ pkglocal) $ return ()   

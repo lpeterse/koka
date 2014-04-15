@@ -35,7 +35,7 @@ import Lib.Trace( trace )
 import Lib.PPrint (Pretty(pretty), text )
 import Data.Char(isUpper,toLower,toUpper,isAlphaNum,isDigit,isAlpha)
 import Common.Failure(failure)
-import Common.File( joinPaths, splitOn )
+import Common.File( joinPaths )
 import Data.List(intersperse)
 ----------------------------------------------------------------
 -- Names
@@ -162,6 +162,13 @@ splitModuleName :: Name -> [Name]
 splitModuleName name
   = if (isQualified name) then splitModuleName (qualifier name)
      else map newName $ splitOn (=='/') (show name) 
+  where
+    splitOn pred xs
+      = normalize pred [] xs
+    normalize pred acc [] = reverse acc
+    normalize pred acc xs 
+      = case (span (not . pred) xs) of
+          (pre,post) -> normalize pred (pre:acc) (dropWhile pred post)
 
 unsplitModuleName :: [Name] -> Name
 unsplitModuleName xs
