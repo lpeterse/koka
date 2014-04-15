@@ -10,7 +10,7 @@ module Common.File(
                   -- * File names
                     takeBaseName, takeFileName, dropExtensions, joinPath, joinPaths, takeExtension, takeDirectory
                   , splitSearchPath, splitDirectories
-                  , isPathSep, isPathDelimiter
+                  , isPathSep
                   , searchPathSeparator
                   , isAbsolute
                   , commonPathPrefix
@@ -73,11 +73,6 @@ joinPaths
 isPathSep :: Char -> Bool
 isPathSep c
   = FilePath.isPathSeparator c
-
--- | Is this a path delimiter? (@;@ (and @:@ too on unix)
-isPathDelimiter :: Char -> Bool
-isPathDelimiter c
-  = FilePath.isSearchPathSeparator c
 
 searchPathSeparator :: Char
 searchPathSeparator
