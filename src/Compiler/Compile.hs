@@ -32,7 +32,6 @@ import Lib.Trace              ( trace )
 import Data.Char              ( isAlphaNum )
 
 import System.Directory       ( createDirectoryIfMissing, canonicalizePath )
-import System.FilePath        ( normalise )
 import Data.List              ( isPrefixOf, isSuffixOf, maximumBy )
 import Control.Monad          ( when )
 import Common.Failure

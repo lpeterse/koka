@@ -20,6 +20,7 @@ module Common.File(
                   , isPathSep
                   , searchPathSeparator
                   , commonPathPrefix
+                  , normalise
                   ) where
 
 import Data.List        ( intersperse, isPrefixOf )
@@ -89,3 +90,7 @@ commonPathPrefix s1 s2
   = joinPaths $ map fst
               $ takeWhile (\(c,d) -> c == d)
               $ zip (splitDirectories s1) (splitDirectories s2)
+
+normalise :: FilePath -> FilePath
+normalise
+  = FilePath.normalise
