@@ -60,7 +60,7 @@ import Core.Core (canonicalSplit)
 -- | Print source in color, given a color scheme, source name, initial line number, the input string, and
 -- a 'Printer'.
 colorize :: Printer p => Maybe RangeMap -> Env -> KGamma -> Gamma -> Bool -> FilePath -> Int -> BString -> p -> IO ()
-colorize mbRangeMap env kgamma gamma fullHtml sourceName lineNo input p  | extname sourceName == (sourceExtension ++ "doc")
+colorize mbRangeMap env kgamma gamma fullHtml sourceName lineNo input p  | takeExtension sourceName == (sourceExtension ++ "doc")
   = let coms = lexComment sourceName lineNo (bstringToString input)
     in mapM_ (write p . fmtComment (fmap rangeMapSort mbRangeMap) env kgamma gamma) coms
 
@@ -95,7 +95,7 @@ colorize mbRangeMap env kgamma gamma fullHtml sourceName lineNo input p  | other
         ,"<style type=\"text/css\">.koka .plaincode, .koka a.pp .pc { display: none; } .koka a.pp { color: inherit; text-decoration: none; }</style>"
         ,"<link rel=\"stylesheet\" type=\"text/css\" href=\"" ++ htmlCss env ++ "\" />"
         ,if (null (htmlJs env)) then "" 
-          else if (extname (htmlJs env) == "require") 
+          else if (takeExtension (htmlJs env) == "require") 
            then "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ dirname (htmlJs env) ++ "require.js\"></script>"
            else "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ htmlJs env ++ "\"></script>"
         ,"<title>" ++ concatMap escape (notdir sourceName) ++ " source code</title>"

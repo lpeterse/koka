@@ -8,7 +8,7 @@
 
 module Common.File( 
                   -- * File names
-                    takeBaseName, notdir, notext, joinPath, joinPaths, extname, dirname
+                    takeBaseName, notdir, notext, joinPath, joinPaths, takeExtension, dirname
                   , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
@@ -31,8 +31,8 @@ takeBaseName
   = FilePath.takeBaseName
 
 -- | Get the file extension
-extname :: FilePath -> FilePath
-extname
+takeExtension :: FilePath -> FilePath
+takeExtension
   = FilePath.takeExtension
 
 -- | Return the directory prefix

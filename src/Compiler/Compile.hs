@@ -759,7 +759,7 @@ codeGen term flags compileTarget loaded
        let fullHtml = outHtml flags > 1
            outHtmlFile  = outBase ++ "-source.html"
            source   = maybe sourceNull programSource (modProgram mod)
-       if (extname (sourceName source) == (sourceExtension ++ "doc"))
+       if (takeExtension (sourceName source) == (sourceExtension ++ "doc"))
         then do termPhase term "write html document" 
                 withNewFilePrinter (outBase ++ ".doc.html") $ \printer ->
                  colorize (modRangeMap mod) env (loadedKGamma loaded) (loadedGamma loaded) fullHtml (sourceName source) 1 (sourceBString source) printer
