@@ -26,14 +26,14 @@ module Common.Name
           
           , prepend, postpend
           , asciiEncode, showHex, moduleNameToPath
-          ) where
+          ) where 
 
-import Lib.Trace( trace )
-import Lib.PPrint (Pretty(pretty), text )
-import Data.Char(isUpper,toLower,toUpper,isAlphaNum,isDigit,isAlpha)
-import Common.Failure(failure)
-import Common.File( joinPaths )
-import Data.List(intersperse)
+import Lib.PPrint      ( Pretty(pretty), text )
+import Data.Char       ( isUpper, toLower, toUpper, isAlphaNum, isDigit, isAlpha )
+import Common.Failure  ( failure )
+import Common.File     ( joinPaths )
+import Data.List       ( intersperse )
+
 ----------------------------------------------------------------
 -- Names
 ----------------------------------------------------------------
@@ -262,15 +262,14 @@ splitCamel (c:cs)
 ----------------------------------------------------------------
 -- name to file path
 ----------------------------------------------------------------
+
 moduleNameToPath :: Name -> FilePath
 moduleNameToPath name
   = asciiEncode True (show name)
 
-{---------------------------------------------------------------
-  Ascii encode a name
-  - on module names  '/' becomes '_'
-  - on normal names '.' becomes '_' 
----------------------------------------------------------------}
+-- | Ascii encode a name
+--   on module names  '/' becomes '_'
+--   on normal names '.' becomes '_' 
 asciiEncode :: Bool -> String -> String
 asciiEncode isModule name
   = case name of
@@ -287,7 +286,7 @@ asciiEncode isModule name
       "(,,)"  -> "_tuple3_"
       "(,,,)" -> "_tuple4_"
       "[]"    -> "_index_"
-      '.':'c':'o':'n':' ':cs -> trace ("con name: " ++ name) $ "_con_" ++ encodeChars cs
+      '.':'c':'o':'n':' ':cs -> "_con_" ++ encodeChars cs
       '.':'t':'y':'p':'e':' ':cs -> "_type_" ++ encodeChars cs
       _       -> encodeChars name
   where
