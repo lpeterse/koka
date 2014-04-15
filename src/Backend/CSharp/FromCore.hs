@@ -1417,7 +1417,7 @@ putLineNo range
   {-
     if (rangeNull == range || posLine (rangeStart range) >= bigLine)
      then putLn (text "#line default")
-     else putLn (text "#line" <+> pretty (posLine (rangeStart range)) <+> dquotes (string (notdir (sourceName (rangeSource range)))))
+     else putLn (text "#line" <+> pretty (posLine (rangeStart range)) <+> dquotes (string (takeFileName (sourceName (rangeSource range)))))
   -}
 
 putLn :: Doc -> Asm ()

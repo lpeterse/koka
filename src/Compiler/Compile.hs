@@ -277,7 +277,7 @@ compileFile term flags mdls compileTarget fpath
            -> compileProgramFromFile term flags mdls compileTarget root stem
   
 -- | Make a file path relative to a set of given paths: return the (maximal) root and stem
--- if it is not relative to the paths, return takeDirectory/notdir
+-- if it is not relative to the paths, return takeDirectory/takeFileName
 makeRelativeToPaths :: [FilePath] -> FilePath -> (FilePath,FilePath)
 makeRelativeToPaths paths fname
   = case findMaximalPrefix paths fname of
@@ -727,7 +727,7 @@ modulePath mod
 outBaseName outDir fname
   = if (null outDir)
      then takeBaseName fname
-     else joinPath outDir (notdir (takeBaseName fname))
+     else joinPath outDir (takeFileName (takeBaseName fname))
 
 capitalize s
   = case s of
@@ -847,7 +847,7 @@ codeGenJS term flags modules compileTarget outBase core
                                 "<!DOCTYPE html>",
                                 "<html>",
                                 "  <head>",
-                                "    <script data-main='" ++ notdir (takeBaseName outjs) ++ "' src='require.js'></script>",
+                                "    <script data-main='" ++ takeFileName (takeBaseName outjs) ++ "' src='require.js'></script>",
                                 "  </head>",
                                 "  <body>",
                                 "  </body>",
@@ -873,7 +873,7 @@ copyIFaceToOutputDir :: Terminal -> Flags -> FilePath -> PackageName -> [Module]
 copyIFaceToOutputDir term flags iface targetPath imported
   -- | host flags == Node && target flags == JS = return ()
   -- | otherwise  
-  = do let outName = joinPaths [outDir flags, targetPath, notdir iface]
+  = do let outName = joinPaths [outDir flags, targetPath, takeFileName iface]
        copyTextIfNewer (rebuild flags) iface outName
        if (CS `elem` targets flags)
         then do let libSrc = notext iface ++ dllExtension
@@ -891,7 +891,7 @@ packagePatch iface current imported source
   = let mapping = [("'" ++ modPackagePath imp ++ "/" ++ takeBaseName (modPath imp) ++ "'", 
                       "'" ++ makeRelativeToDir (modPackageQPath imp) current ++ "/" ++ takeBaseName (modPath imp) ++ "'") 
                     | imp <- imported, not (null (modPackageName imp))]
-    in -- trace ("patch: " ++ current ++ "/" ++ notdir iface ++ ":\n  " ++ show mapping) $
+    in -- trace ("patch: " ++ current ++ "/" ++ takeFileName iface ++ ":\n  " ++ show mapping) $
        case span (\l -> not (isPrefixOf l "define([")) (lines source) of
          (pre,line:post)
            -> let rline = replaceWith mapping line

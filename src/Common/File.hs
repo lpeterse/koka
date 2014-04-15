@@ -8,7 +8,7 @@
 
 module Common.File( 
                   -- * File names
-                    takeBaseName, notdir, notext, joinPath, joinPaths, takeExtension, takeDirectory
+                    takeBaseName, takeFileName, notext, joinPath, joinPaths, takeExtension, takeDirectory
                   , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
@@ -41,8 +41,8 @@ takeDirectory
   = FilePath.takeDirectory
 
 -- | Remove the directory prefix
-notdir :: FilePath -> FilePath
-notdir
+takeFileName :: FilePath -> FilePath
+takeFileName
   = FilePath.takeFileName
 
 notext :: FilePath -> FilePath
