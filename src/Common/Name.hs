@@ -273,6 +273,7 @@ moduleNameToPath name
 asciiEncode :: Bool -> String -> String
 asciiEncode isModule name
   = case name of
+      -- this match is for performance reasons
       (c:cs)  | isAlphaNum c -> encodeChars name
       ""      -> "_null_"       
       ".<>"   -> "_Total_"
@@ -290,17 +291,15 @@ asciiEncode isModule name
       '.':'t':'y':'p':'e':' ':cs -> "_type_" ++ encodeChars cs
       _       -> encodeChars name
   where
+    encodeChars :: String -> String
     encodeChars s
-      = let (dots,rest) = span (=='.') s
-        in map (const '_') dots ++ concatMap encodeChar rest
-  
+      = concatMap encodeChar s
     encodeChar :: Char -> String
     encodeChar c | isAlphaNum c  = [c]
     encodeChar c
       = case c of
           '/' | isModule -> "_"
           '.' | not isModule -> "_"
-
           '_' -> "__"
           '.' -> "_dot_"
           '-' -> "_dash_"   
@@ -332,23 +331,19 @@ asciiEncode isModule name
           '`'  -> "_bq_"
           '{'  -> "_lc_"
           '}'  -> "_rc_"
-            
-          _   -> "_x" ++ showHex 2 (fromEnum c) ++ "_"
-
-
+          _    -> "_x" ++ showHex 2 (fromEnum c) ++ "_"
 
 showHex :: Int -> Int -> String
 showHex len i
   = let hexs = map showHexChar (reverse (hexDigits i))
-    in replicate (len - length hexs) '0' ++ hexs
+    in  replicate (len - length hexs) '0' ++ hexs
   where
     showHexChar :: Int -> Char
     showHexChar d  | d <= 9    = toEnum (d + fromEnum '0')
                    | otherwise = toEnum (d - 10 + fromEnum 'A')  
-
     hexDigits :: Int -> [Int]
     hexDigits i
       = let (d,m) = i `divMod` 16
-        in if d == 0 then [m]
-                     else m : hexDigits d
+        in  if d == 0 then [m]
+                      else m : hexDigits d
 
