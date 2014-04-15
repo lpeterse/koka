@@ -84,23 +84,8 @@ notext
 
 -- | Split a (semi-)colon separated list of directories into a directory list
 undelimPaths :: String -> [FilePath]
-undelimPaths xs
-  = filter (not . null) (normalize [] "" xs)
-  where
-    -- initial spaces
-    normalize ps "" (c:cs)  | isSpace c
-      = normalize ps "" cs
-    -- directory on windows
-    normalize ps "" (c:':':cs)    
-      = normalize ps (':':c:[]) cs
-    -- normal
-    normalize ps p xs
-      = case xs of
-          []     -> if (null p)
-                     then reverse ps
-                     else reverse (reverse p:ps)
-          (c:cs) | isPathDelimiter c -> normalize (reverse p:ps) "" cs
-                 | otherwise         -> normalize ps (c:p) cs
+undelimPaths
+  = FilePath.splitSearchPath
 
 -- FIXME: current code base cannot deal with empty result list!
 splitDirectories :: FilePath -> [FilePath]
