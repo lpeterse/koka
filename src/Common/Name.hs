@@ -5,13 +5,10 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    User defined names (just 'String's).
--}
------------------------------------------------------------------------------
+
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 module Common.Name
-          ( Name, Names     -- instance Eq Ord Show
+          ( Name            -- instance Eq Ord Show
           , showName        -- show with quotes
           , newName, newQualified
           , nameNil, nameIsNil
@@ -40,7 +37,6 @@ import Data.List(intersperse)
 ----------------------------------------------------------------
 -- Names
 ----------------------------------------------------------------
-type Names = [Name]
 
 -- | Names defined by the user.
 -- Uses a hash to speed up comparisions. The hash is constructed
