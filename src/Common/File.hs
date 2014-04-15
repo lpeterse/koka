@@ -8,11 +8,17 @@
 
 module Common.File( 
                   -- * File names
-                    takeBaseName, takeFileName, dropExtensions, joinPath, joinPaths, takeExtension, takeDirectory
-                  , splitSearchPath, splitDirectories
+                    takeBaseName
+                  , takeFileName
+                  , dropExtensions
+                  , joinPath
+                  , joinPaths
+                  , takeExtension
+                  , takeDirectory
+                  , splitSearchPath
+                  , splitDirectories
                   , isPathSep
                   , searchPathSeparator
-                  , isAbsolute
                   , commonPathPrefix
                   ) where
 
@@ -77,10 +83,6 @@ isPathSep c
 searchPathSeparator :: Char
 searchPathSeparator
   = FilePath.searchPathSeparator
-
-isAbsolute :: FilePath -> Bool
-isAbsolute
-  = FilePath.isAbsolute
 
 commonPathPrefix :: FilePath -> FilePath -> FilePath
 commonPathPrefix s1 s2
