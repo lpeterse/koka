@@ -19,7 +19,7 @@ module Compiler.Package( Packages, PackageName
 
 import Data.Char        ( toLower )
 import Lib.PPrint
-import Data.List        ( intersperse, replicate, sort )
+import Data.List        ( intersperse, replicate, sort, isPrefixOf )
 import Common.Failure   ( raiseIO, catchIO )
  
 import System.Directory ( doesFileExist, doesDirectoryExist
@@ -53,14 +53,6 @@ pkgName pkg = last $ splitPath $ pkgQualName pkg
 ---------------------------------------------------------------
 -- search packages
 ----------------------------------------------------------------
-{-
--- | Is this a package director?
-isPackageDir :: Packages -> FilePath -> Bool
-isPackageDir (Packages _ roots) dir
-  = (node_modules `elem` splitPath dir)  
-    || (any (startsWith dir) roots)
--}
-
 
 -- | Return package names: ("A/B/C", "lib")  (or ("","") for a non package)
 packageInfoFromDir :: Packages -> FilePath -> (FilePath,FilePath)
@@ -99,7 +91,7 @@ visiblePackages (Packages pkgs _) ccurrent
   = visiblePkgs pkgs 
   where
     visiblePkgs pkgs 
-      = do let isVisible pkg = ccurrent `startsWith` packageBase (pkgDir pkg)               
+      = do let isVisible pkg = ccurrent `isPrefixOf` packageBase (pkgDir pkg)               
                isVisibleSubs [] = False
                isVisibleSubs (pkg:_) = isVisible pkg
                visible = dropWhile (not . isVisible) pkgs
@@ -156,7 +148,7 @@ discoverPackages root
                     let keywords = case jsLookup json ["keywords"] of
                                      JsArray elems -> map (map toLower . toString) elems
                                      _             -> []
-                        isKokaPkg = (cname `startsWith` "koka"  || "koka" `elem` keywords)
+                        isKokaPkg = (cname `isPrefixOf` "koka"  || "koka" `elem` keywords)
                     let local = toString $ jsFind json (JsString (if isKokaPkg then "lib" else "")) ["directories","lib"]                        
                         pkglocal = joinPaths $ dropWhile (==".") $ splitPath local -- strip off leading "./xxx"
                         pkgdir   = joinPaths [path,cname,pkglocal] -- TODO: read from json

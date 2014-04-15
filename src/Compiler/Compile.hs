@@ -33,7 +33,7 @@ import Data.Char              ( isAlphaNum )
 
 import System.Directory       ( createDirectoryIfMissing, canonicalizePath )
 import System.FilePath        ( normalise )
-import Data.List              ( isPrefixOf )
+import Data.List              ( isPrefixOf, isSuffixOf )
 import Control.Monad          ( when )
 import Common.Failure
 import Lib.Printer            ( withNewFilePrinter )
@@ -307,7 +307,7 @@ compileProgramFromFile term flags mdls compileTarget rootPath stem
        if (exist) then return () else liftError $ errorMsg (errorFileNotFound flags fname)
        program <- lift $ parseProgramFromFile (semiInsert flags) fname
        let isSuffix = map (\c -> if isPathSep c then '/' else c) (notext stem)
-                       `endsWith` show (programName program)                        
+                       `isSuffixOf` show (programName program)
            ppcolor c doc = color (c (colors (prettyEnvFromFlags flags))) doc
        if (isExecutable compileTarget || isSuffix) then return ()
         else liftError $ errorMsg (ErrorGeneral (programNameRange program) 
@@ -883,7 +883,7 @@ packagePatch iface current imported source
                       "'" ++ makeRelativeToDir (modPackageQPath imp) current ++ "/" ++ basename (modPath imp) ++ "'") 
                     | imp <- imported, not (null (modPackageName imp))]
     in -- trace ("patch: " ++ current ++ "/" ++ notdir iface ++ ":\n  " ++ show mapping) $
-       case span (\l -> not (startsWith l "define([")) (lines source) of
+       case span (\l -> not (isPrefixOf l "define([")) (lines source) of
          (pre,line:post)
            -> let rline = replaceWith mapping line
               in -- trace ("replace with: " ++ show mapping ++ "\n" ++ line ++ "\n" ++ rline) $
@@ -900,7 +900,7 @@ packagePatch iface current imported source
 
     replaceWith mapping "" = ""
     replaceWith mapping s
-      = case filter (startsWith s . fst) mapping of
+      = case filter (isPrefixOf s . fst) mapping of
           ((pattern,replacement):_) -> replacement ++ replaceWith mapping (drop (length pattern) s)
           _                         -> head s : replaceWith mapping (tail s) 
 

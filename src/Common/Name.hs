@@ -35,7 +35,7 @@ import Lib.Trace( trace )
 import Lib.PPrint (Pretty(pretty), text )
 import Data.Char(isUpper,toLower,toUpper,isAlphaNum,isDigit,isAlpha)
 import Common.Failure(failure)
-import Common.File( joinPaths, splitOn, endsWith, startsWith )
+import Common.File( joinPaths, splitOn )
 import Data.List(intersperse)
 ----------------------------------------------------------------
 -- Names

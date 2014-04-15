@@ -17,7 +17,7 @@ module Common.File(
                   , getProgramPath, getInstallDir
 
                   -- * Strings
-                  , startsWith, endsWith, splitOn
+                  , splitOn
 
                   -- * File names
                   , basename, notdir, notext, joinPath, joinPaths, extname, dirname
@@ -36,7 +36,7 @@ module Common.File(
                   , copyBinaryFile, copyBinaryIfNewer
                   ) where
 
-import Data.List        ( intersperse )
+import Data.List        ( intersperse, isPrefixOf )
 import Data.Char        ( toLower, isSpace )
 import qualified Platform.Runtime as B ( copyBinaryFile )
 import Common.Failure   ( raiseIO, catchIO )
@@ -53,14 +53,6 @@ import qualified System.FilePath    as FilePath
 import qualified Platform.Console as C (getProgramPath)
 import Lib.Trace
 import Platform.Filetime
-
-startsWith, endsWith :: String -> String -> Bool
-startsWith s  [] = True
-startsWith [] _  = False
-startsWith (c:cs) (p:ps) = if (p==c) then startsWith cs ps else False
-
-endsWith s post
-  = startsWith (reverse s) (reverse post)
 
 splitOn pred xs
   = normalize [] xs
@@ -285,7 +277,7 @@ isAbsolute fpath
 -- | Find a maximal prefix given a string and list of prefixes. Returns the prefix and its length.
 findMaximalPrefix :: [String] -> String -> Maybe (Int,String)
 findMaximalPrefix xs s
-  = findMaximal (\x -> if startsWith s x then Just (length x) else Nothing) xs
+  = findMaximal (\x -> if isPrefixOf s x then Just (length x) else Nothing) xs
 
 findMaximal :: (a -> Maybe Int) -> [a] -> Maybe (Int,a)
 findMaximal f xs
@@ -339,23 +331,3 @@ getEnvVar name
        case lookup (map toLower name) (map (\(k,v) -> (map toLower k,v)) env) of
          Just val -> return val
          Nothing  -> return ""
-
-     
-
-{-
-splitPath :: String -> [String]
-splitPath xs
-  = normalize [] "" xs
-  where
-    normalize ps "" (c:':':cs) 
-      = normalize ps (':':c:[]) cs
-
-    normalize ps p xs
-      = case xs of
-          []             -> if (null p)
-                             then reverse ps
-                             else reverse (reverse p:ps)
-          (';':cs)       -> normalize (reverse p:ps) "" cs
-          (':':cs)       -> normalize (reverse p:ps) "" cs
-          (c:cs)         -> normalize ps (c:p) cs
--}
