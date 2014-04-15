@@ -77,7 +77,7 @@ copyTextFile :: FilePath -> FilePath -> IO ()
 copyTextFile src dest
   = if (src == dest)
      then return ()
-     else catchIO (do createDirectoryIfMissing True (dirname dest)
+     else catchIO (do createDirectoryIfMissing True (takeDirectory dest)
                       copyFile src dest) 
             (error ("could not copy file " ++ show src ++ " to " ++ show dest))
 
@@ -85,7 +85,7 @@ copyTextFileWith :: FilePath -> FilePath -> (String -> String) -> IO ()
 copyTextFileWith src dest transform
   = if (src == dest)
      then return ()
-     else catchIO (do createDirectoryIfMissing True (dirname dest)
+     else catchIO (do createDirectoryIfMissing True (takeDirectory dest)
                       content <- readFile src
                       writeFile dest (transform content)) 
             (error ("could not copy file " ++ show src ++ " to " ++ show dest))
@@ -122,7 +122,7 @@ copyTextIfNewerWith always srcName outName transform
 getInstallDir :: IO FilePath
 getInstallDir
   = do p <- getProgramPath
-       let d  = dirname p
+       let d  = takeDirectory p
            ds = splitDirectories d
            result = case reverse ds of
                       ("bin":es)   -> joinPaths (reverse es)

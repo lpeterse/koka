@@ -394,10 +394,10 @@ externalIncludeEntry
            -- Example:
            --   currentFile = "lib/std/core.kk"
            --   fname       = "core-inline.cs"
-           -- If `fname` does not carry a leading path (dirname == ".")
+           -- If `fname` does not carry a leading path (takeDirectory == ".")
            -- assume it is in the same directory as `currentFile`.
-           let fpath      = if dirname fname == "."
-                              then joinPath (dirname currentFile) fname
+           let fpath      = if takeDirectory fname == "."
+                              then joinPath (takeDirectory currentFile) fname
                               else fname
                mbContent  = unsafePerformIO $ exCatch
                               ( do content <- readFile fpath

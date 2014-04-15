@@ -277,7 +277,7 @@ compileFile term flags mdls compileTarget fpath
            -> compileProgramFromFile term flags mdls compileTarget root stem
   
 -- | Make a file path relative to a set of given paths: return the (maximal) root and stem
--- if it is not relative to the paths, return dirname/notdir
+-- if it is not relative to the paths, return takeDirectory/notdir
 makeRelativeToPaths :: [FilePath] -> FilePath -> (FilePath,FilePath)
 makeRelativeToPaths paths fname
   = case findMaximalPrefix paths fname of
@@ -349,7 +349,7 @@ compileProgram' term flags mdls compileTarget fname program
                                   , loadedModules = allmods
                                   }
        -- trace ("compile file: " ++ show fname ++ "\n time: "  ++ show ftime ++ "\n latest: " ++ show (loadedLatest loaded)) $ return ()
-       (loaded1,imported) <- resolveImports term flags (dirname fname) loaded (map ImpProgram (programImports program))
+       (loaded1,imported) <- resolveImports term flags (takeDirectory fname) loaded (map ImpProgram (programImports program))
        if (name /= nameInteractiveModule || verbose flags > 0)
         then liftIO $ termPhaseDoc term (color (colorInterpreter (colorScheme flags)) (text "check  :") <+> 
                                            color (colorSource (colorScheme flags)) (pretty (name)))
@@ -513,7 +513,7 @@ resolveModule term flags currentDir mdls mimp
       
       loadFromIface iface root stem 
         = -- trace ("loadFromIFace: " ++  iface ++ ": " ++ root ++ "/" ++ source) $
-          do let (pkgQname,pkgLocal) = packageInfoFromDir (packages flags) (dirname iface)             
+          do let (pkgQname,pkgLocal) = packageInfoFromDir (packages flags) (takeDirectory iface)             
                  loadMessage msg = liftIO $ termPhaseDoc term (color (colorInterpreter (colorScheme flags)) (text msg) <+> 
                                        color (colorSource (colorScheme flags)) 
                                          (pretty (if null pkgQname then "" else pkgQname ++ "/") <>  pretty (name)))
@@ -538,7 +538,7 @@ resolveModule term flags currentDir mdls mimp
                  loaded = initialLoaded { loadedModule = mod 
                                         , loadedModules = allmods
                                         }
-             (loadedImp,imps) <- resolveImports term flags (dirname iface) loaded (map ImpCore (Core.coreProgImports (modCore mod)))
+             (loadedImp,imps) <- resolveImports term flags (takeDirectory iface) loaded (map ImpCore (Core.coreProgImports (modCore mod)))
              let latest = maxFileTimes (map modTime imps)
              -- trace ("loaded iface: " ++ show iface ++ "\n time: "  ++ show (modTime mod) ++ "\n latest: " ++ show (latest)) $ return ()
              if (latest > modTime mod 
@@ -744,7 +744,7 @@ codeGen term flags compileTarget loaded
            ifaceDoc = Core.Pretty.prettyCore env{ coreIface = True } (modCore mod) <$> empty
        
        -- create output directory if it does not exist
-       createDirectoryIfMissing True (dirname outBase)
+       createDirectoryIfMissing True (takeDirectory outBase)
 
        -- core
        let outCore  = outBase ++ ".core"
