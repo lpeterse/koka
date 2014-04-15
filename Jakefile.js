@@ -99,7 +99,7 @@ task("compiler", [], function(rebuild) {
 
 desc("load the compiler in ghci");
 task("ghci", ["compiler"], function(module) {
-  var cmd = "ghci out\\debug\\Platform\\cconsole.o" + hsRunFlags + " -i" + sourceDir + " -i" + path.join(sourceDir,"Platform","cpp") 
+  var cmd = "ghci -D__GHCI__" + hsRunFlags + " -i" + sourceDir + " -i" + path.join(sourceDir,"Platform","cpp") 
                 + " " + path.join(sourceDir,(module ? module + ".hs" : "Main.hs"));
   jake.logger.log("> " + cmd);
   jake.exec(cmd + " 2>&1", {interactive: true});  

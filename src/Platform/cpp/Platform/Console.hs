@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 -- for ghc older than 7.0: {-# OPTIONS -fglasgow-exts -#include "cconsole.h" #-}
 ------------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
@@ -16,6 +17,23 @@ module Platform.Console( setColor, setBackColor, setReverse, setUnderline
                        , withConsole, bracketConsole
                        , getProgramPath
                        ) where
+
+#ifdef __GHCI__
+
+  --  Linking the foreign C code may break when invoked via GHCI.
+  --  We supply undefined stubs in this case. This allows for
+  --  testing all parts of the compiler except running the compiler
+  --  itself.
+
+  setColor c        = undefined
+  setBackColor c    = undefined
+  setReverse b      = undefined
+  setUnderline b    = undefined
+  withConsole f     = undefined
+  bracketConsole io = undefined
+  getProgramPath    = undefined
+
+#else
 
 import Platform.Runtime( finally )
 import System.IO       ( hFlush, stdout )
@@ -72,3 +90,5 @@ foreign import ccall consoleSetBackColor  :: Int -> IO ()
 foreign import ccall consoleSetReverse    :: Int -> IO ()
 foreign import ccall consoleSetUnderline  :: Int -> IO ()
 foreign import ccall consoleGetProgramPath :: IO CString
+
+#endif
