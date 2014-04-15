@@ -96,8 +96,8 @@ colorize mbRangeMap env kgamma gamma fullHtml sourceName lineNo input p  | other
         ,"<link rel=\"stylesheet\" type=\"text/css\" href=\"" ++ htmlCss env ++ "\" />"
         ,if (null (htmlJs env)) then "" 
           else if (extname (htmlJs env) == "require") 
-           then "<script type=\"text/javascript\" data-main=\"" ++ basename (htmlJs env) ++ "\" src=\"" ++ dirname (htmlJs env) ++ "require.js\"></script>"
-           else "<script type=\"text/javascript\" data-main=\"" ++ basename (htmlJs env) ++ "\" src=\"" ++ htmlJs env ++ "\"></script>"
+           then "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ dirname (htmlJs env) ++ "require.js\"></script>"
+           else "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ htmlJs env ++ "\"></script>"
         ,"<title>" ++ concatMap escape (notdir sourceName) ++ " source code</title>"
         ,"</head>"
         ,""

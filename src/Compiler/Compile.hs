@@ -726,8 +726,8 @@ modulePath mod
 
 outBaseName outDir fname
   = if (null outDir)
-     then basename fname
-     else joinPath outDir (notdir (basename fname))
+     then takeBaseName fname
+     else joinPath outDir (notdir (takeBaseName fname))
 
 capitalize s
   = case s of
@@ -847,7 +847,7 @@ codeGenJS term flags modules compileTarget outBase core
                                 "<!DOCTYPE html>",
                                 "<html>",
                                 "  <head>",
-                                "    <script data-main='" ++ notdir (basename outjs) ++ "' src='require.js'></script>",
+                                "    <script data-main='" ++ notdir (takeBaseName outjs) ++ "' src='require.js'></script>",
                                 "  </head>",
                                 "  <body>",
                                 "  </body>",
@@ -888,8 +888,8 @@ copyIFaceToOutputDir term flags iface targetPath imported
 
 packagePatch :: FilePath -> PackageName -> [Module] -> (String -> String)
 packagePatch iface current imported source
-  = let mapping = [("'" ++ modPackagePath imp ++ "/" ++ basename (modPath imp) ++ "'", 
-                      "'" ++ makeRelativeToDir (modPackageQPath imp) current ++ "/" ++ basename (modPath imp) ++ "'") 
+  = let mapping = [("'" ++ modPackagePath imp ++ "/" ++ takeBaseName (modPath imp) ++ "'", 
+                      "'" ++ makeRelativeToDir (modPackageQPath imp) current ++ "/" ++ takeBaseName (modPath imp) ++ "'") 
                     | imp <- imported, not (null (modPackageName imp))]
     in -- trace ("patch: " ++ current ++ "/" ++ notdir iface ++ ":\n  " ++ show mapping) $
        case span (\l -> not (isPrefixOf l "define([")) (lines source) of

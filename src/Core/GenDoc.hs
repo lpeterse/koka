@@ -17,7 +17,7 @@ import Lib.Trace
 import Prelude hiding (span)
 import Data.List( sortBy, intersperse, partition )
 import Data.Char( isSpace )
-import Common.File( dirname, extname, basename )
+import Common.File( dirname, extname, takeBaseName )
 import Lib.Printer
 import Common.Name
 import Common.Range
@@ -194,8 +194,8 @@ genDoc env kgamma gamma core p
         ,"<link rel=\"stylesheet\" type=\"text/css\" href=\"" ++ htmlCss env ++ "\" />"
         ,if (null (htmlJs env)) then "" 
           else if (extname (htmlJs env) == "require") 
-           then "<script type=\"text/javascript\" data-main=\"" ++ basename (htmlJs env) ++ "\" src=\"" ++ dirname (htmlJs env) ++ "require.js\"></script>"
-           else "<script type=\"text/javascript\" data-main=\"" ++ basename (htmlJs env) ++ "\" src=\"" ++ htmlJs env ++ "\"></script>"
+           then "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ dirname (htmlJs env) ++ "require.js\"></script>"
+           else "<script type=\"text/javascript\" data-main=\"" ++ takeBaseName (htmlJs env) ++ "\" src=\"" ++ htmlJs env ++ "\"></script>"
         ,"<title>" ++ show (coreProgName core) ++ " documentation</title>"
         ,"</head>"
         ,""

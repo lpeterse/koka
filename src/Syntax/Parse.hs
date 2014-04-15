@@ -186,7 +186,7 @@ pmodule source
        (name,rng) <- modulepath
        programBody vis source name rng doc
   <|>
-    programBody Public source (newName (basename (sourceName source))) (rangeNull) ""
+    programBody Public source (newName (takeBaseName (sourceName source))) (rangeNull) ""
 
 programBody vis source modName nameRange doc
   = do many semiColon

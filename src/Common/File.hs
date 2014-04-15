@@ -8,7 +8,7 @@
 
 module Common.File( 
                   -- * File names
-                    basename, notdir, notext, joinPath, joinPaths, extname, dirname
+                    takeBaseName, notdir, notext, joinPath, joinPaths, extname, dirname
                   , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
@@ -26,8 +26,8 @@ import Test.QuickCheck
 --------------------------------------------------------------------------}
 
 -- | Remove the extension and directory part
-basename :: FilePath -> FilePath
-basename
+takeBaseName :: FilePath -> FilePath
+takeBaseName
   = FilePath.takeBaseName
 
 -- | Get the file extension
