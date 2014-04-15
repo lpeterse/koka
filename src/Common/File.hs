@@ -31,6 +31,7 @@ module Common.File(
                   , getFileTimeOrCurrent, getCurrentTime
                   , copyTextFile, copyTextIfNewer, copyTextIfNewerWith, copyTextFileWith
                   , copyBinaryFile, copyBinaryIfNewer
+
                   ) where
 
 import Data.List        ( intersperse, isPrefixOf )
@@ -51,24 +52,21 @@ import qualified Platform.Console as C (getProgramPath)
 import Lib.Trace
 import Platform.Filetime
 
-
-
+import Test.QuickCheck
 
 {--------------------------------------------------------------------------
   File names
 --------------------------------------------------------------------------}
 
 -- | Remove the extension and directory part
-basename :: FilePath -> String
-basename  = FilePath.takeBaseName
+basename :: FilePath -> FilePath
+basename
+  = FilePath.takeBaseName
 
 -- | Get the file extension
 extname :: FilePath -> FilePath
-extname fname
-  = let (pre,post) = span (/='.') (reverse (notdir fname))
-    in if null post
-        then ""
-        else ("." ++ reverse pre) 
+extname
+  = FilePath.takeExtension
 
 -- | Return the directory prefix (including last separator if present)
 dirname :: FilePath -> FilePath
@@ -79,7 +77,6 @@ dirname fname
 notdir :: FilePath -> FilePath
 notdir fname
   = last (splitDirectories fname)
-
 
 notext :: FilePath -> FilePath
 notext fname
@@ -230,9 +227,7 @@ getInstallDir
                       (_:"out":es) -> joinPaths (reverse es)
                       _            -> d
        -- trace ("install-dir: " ++ result ++ ": " ++ show ds) $
-       return result               
-
-       
+       return result
 
 getProgramPath :: IO FilePath
 getProgramPath
