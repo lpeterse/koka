@@ -316,7 +316,7 @@ compileProgramFromFile term flags mdls compileTarget rootPath stem
        if (exist) then return () else liftError $ errorMsg (errorFileNotFound flags fname)
        program <- lift $ parseProgramFromFile (semiInsert flags) fname
        let isSuffix = show (programName program)
-                      `isSuffixOf` map (\c -> if isPathSep c then '/' else c) (notext stem)
+                      `isSuffixOf` map (\c -> if isPathSep c then '/' else c) (dropExtensions stem)
            ppcolor c doc = color (c (colors (prettyEnvFromFlags flags))) doc
        if (isExecutable compileTarget || isSuffix) then return ()
         else liftError $ errorMsg (ErrorGeneral (programNameRange program) 
@@ -331,7 +331,7 @@ compileProgramFromFile term flags mdls compileTarget rootPath stem
 nameFromFile :: FilePath -> Name
 nameFromFile fname
   = newName $ map (\c -> if isPathSep c then '/' else c) $ 
-    dropWhile isPathSep $ notext fname
+    dropWhile isPathSep $ dropExtensions fname
 
 isExecutable :: CompileTarget a -> Bool
 isExecutable (Executable _ _) = True
@@ -876,13 +876,13 @@ copyIFaceToOutputDir term flags iface targetPath imported
   = do let outName = joinPaths [outDir flags, targetPath, takeFileName iface]
        copyTextIfNewer (rebuild flags) iface outName
        if (CS `elem` targets flags)
-        then do let libSrc = notext iface ++ dllExtension
-                let libOut = notext outName ++ dllExtension
+        then do let libSrc = dropExtensions iface ++ dllExtension
+                let libOut = dropExtensions outName ++ dllExtension
                 copyBinaryIfNewer (rebuild flags) libSrc libOut
         else return ()
        if (JS `elem` targets flags)
-        then do let jsSrc = notext iface ++ ".js"
-                let jsOut = notext outName ++ ".js"
+        then do let jsSrc = dropExtensions iface ++ ".js"
+                let jsOut = dropExtensions outName ++ ".js"
                 copyTextFileWith  jsSrc jsOut (packagePatch iface (targetPath) imported)
         else return ()
 

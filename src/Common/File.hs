@@ -8,7 +8,7 @@
 
 module Common.File( 
                   -- * File names
-                    takeBaseName, takeFileName, notext, joinPath, joinPaths, takeExtension, takeDirectory
+                    takeBaseName, takeFileName, dropExtensions, joinPath, joinPaths, takeExtension, takeDirectory
                   , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
@@ -45,8 +45,8 @@ takeFileName :: FilePath -> FilePath
 takeFileName
   = FilePath.takeFileName
 
-notext :: FilePath -> FilePath
-notext
+dropExtensions :: FilePath -> FilePath
+dropExtensions
   = FilePath.dropExtensions
 
 -- | Split a (semi-)colon separated list of directories into a directory list

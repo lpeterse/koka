@@ -27,7 +27,7 @@ import Lib.PPrint
 import Lib.Printer       
 import Common.Failure         ( raiseIO, catchIO )
 import Common.ColorScheme
-import Common.File            ( notext, joinPath, isPathSep )
+import Common.File            ( dropExtensions, joinPath, isPathSep )
 import Common.System          ( searchPaths, runSystem )
 import Common.Name            ( Name, unqualify, qualify, newName )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractive, nameInteractiveModule, nameSystemCore, toShortModuleName )
