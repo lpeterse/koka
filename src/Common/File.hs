@@ -9,7 +9,7 @@
 module Common.File( 
                   -- * File names
                     takeBaseName, takeFileName, dropExtensions, joinPath, joinPaths, takeExtension, takeDirectory
-                  , undelimPaths, splitDirectories
+                  , splitSearchPath, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
                   , isAbsolute
@@ -50,8 +50,8 @@ dropExtensions
   = FilePath.dropExtensions
 
 -- | Split a (semi-)colon separated list of directories into a directory list
-undelimPaths :: String -> [FilePath]
-undelimPaths
+splitSearchPath :: String -> [FilePath]
+splitSearchPath
   = FilePath.splitSearchPath
 
 -- FIXME: current code base cannot deal with empty result list!

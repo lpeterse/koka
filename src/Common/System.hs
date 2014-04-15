@@ -177,7 +177,7 @@ searchPathsEx path exts name
 getEnvPaths :: String -> IO [FilePath]
 getEnvPaths name
   = do{ xs <- getEnvVar name
-      ; return (undelimPaths xs)
+      ; return (splitSearchPath xs)
       }
   `catchIO` \err -> return []
 

@@ -260,7 +260,7 @@ options = (\(xss,yss) -> (concat xss, concat yss)) $ unzip
 
   includePathFlag mbs
     = Flag (\f -> f{ includePath = case mbs of 
-                                     Just s | not (null s) -> includePath f ++ undelimPaths s
+                                     Just s | not (null s) -> includePath f ++ splitSearchPath s
                                      _ -> [] })
 
   outDirFlag s
