@@ -17,8 +17,10 @@ module Common.File(
                   , commonPathPrefix
                   ) where
 
-import Data.List        ( intersperse, isPrefixOf )
+import Data.List        ( intersperse, isPrefixOf, maximumBy )
 import qualified System.FilePath as FilePath
+
+import Test.QuickCheck
 
 {--------------------------------------------------------------------------
   File paths
@@ -60,13 +62,13 @@ splitDirectories x
     in  if null y then [""] else y
 
 joinPath :: FilePath -> FilePath -> FilePath
-joinPath p1 p2
-  = FilePath.combine p1 p2
+joinPath
+  = FilePath.combine
 
 -- | Join a list of paths into one path
 joinPaths :: [FilePath] -> FilePath
 joinPaths
-  = foldl joinPath ""
+  = foldl FilePath.combine ""
 
 -- | Is this a file separator.
 isPathSep :: Char -> Bool
@@ -88,20 +90,14 @@ isAbsolute
 
 commonPathPrefix :: FilePath -> FilePath -> FilePath
 commonPathPrefix s1 s2
-  = joinPaths $ map fst $ takeWhile (\(c,d) -> c == d) $ zip (splitDirectories s1) (splitDirectories s2)
+  = joinPaths $ map fst
+              $ takeWhile (\(c,d) -> c == d)
+              $ zip (splitDirectories s1) (splitDirectories s2)
 
 -- | Find a maximal prefix given a string and list of prefixes. Returns the prefix and its length.
 findMaximalPrefix :: [String] -> String -> Maybe (Int,String)
 findMaximalPrefix xs s
-  = findMaximal (\x -> if isPrefixOf s x then Just (length x) else Nothing) xs
-
-findMaximal :: (a -> Maybe Int) -> [a] -> Maybe (Int,a)
-findMaximal f xs
-  = normalize Nothing xs
-  where
-    normalize res []     = res
-    normalize res (x:xs) = case (f x) of
-                        Just n  -> case res of
-                                     Just (m,y)  | m >= n -> normalize res xs
-                                     _           -> normalize (Just (n,x)) xs
-                        Nothing -> normalize res xs
+  = case filter (s `isPrefixOf`) xs of
+      []  -> Nothing
+      xs' -> let z = maximumBy (\x y-> length x `compare` length y) xs'
+             in  Just (length z, z)
