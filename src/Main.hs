@@ -15,10 +15,8 @@ module Main where
 import System.Exit            ( exitFailure )
 import Control.Monad          ( when )
 
-import Platform.Config
 import Lib.PPrint             ( Pretty(pretty), writePrettyLn )
-import Lib.Printer
-import Common.ColorScheme
+import Lib.Printer            ( writeLn, ColorPrinter, withColorPrinter, withFileNoColorPrinter, withNoColorPrinter, withHtmlColorPrinter )
 import Common.Failure         ( catchIO )
 import Common.Error           ( ErrorMessage(..), ppErrorMessage, checkError )
 import Common.Name            ( newName, nameNil )
