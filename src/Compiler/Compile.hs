@@ -33,7 +33,7 @@ import Data.Char              ( isAlphaNum )
 
 import System.Directory       ( createDirectoryIfMissing, canonicalizePath )
 import System.FilePath        ( normalise )
-import Data.List              ( isPrefixOf, isSuffixOf )
+import Data.List              ( isPrefixOf, isSuffixOf, maximumBy )
 import Control.Monad          ( when )
 import Common.Failure
 import Lib.Printer            ( withNewFilePrinter )
@@ -283,6 +283,14 @@ makeRelativeToPaths paths fname
   = case findMaximalPrefix paths fname of
       Just (n,root) -> (root,drop n fname)
       _             -> ("", fname)
+  where
+    findMaximalPrefix :: [String] -> String -> Maybe (Int,String)
+    findMaximalPrefix xs s
+      = case filter (s `isPrefixOf`) xs of
+        []  -> Nothing
+        xs' -> let z = maximumBy (\x y-> length x `compare` length y) xs'
+               in  Just (length z, z)
+
 
 compileModule :: Terminal -> Flags -> Modules -> Name -> IO (Error Loaded)
 compileModule term flags mdls name

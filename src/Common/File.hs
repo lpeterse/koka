@@ -12,12 +12,11 @@ module Common.File(
                   , undelimPaths, splitDirectories
                   , isPathSep, isPathDelimiter
                   , searchPathSeparator
-                  , findMaximalPrefix
                   , isAbsolute
                   , commonPathPrefix
                   ) where
 
-import Data.List        ( intersperse, isPrefixOf, maximumBy )
+import Data.List        ( intersperse, isPrefixOf )
 import qualified System.FilePath as FilePath
 
 import Test.QuickCheck
@@ -93,11 +92,3 @@ commonPathPrefix s1 s2
   = joinPaths $ map fst
               $ takeWhile (\(c,d) -> c == d)
               $ zip (splitDirectories s1) (splitDirectories s2)
-
--- | Find a maximal prefix given a string and list of prefixes. Returns the prefix and its length.
-findMaximalPrefix :: [String] -> String -> Maybe (Int,String)
-findMaximalPrefix xs s
-  = case filter (s `isPrefixOf`) xs of
-      []  -> Nothing
-      xs' -> let z = maximumBy (\x y-> length x `compare` length y) xs'
-             in  Just (length z, z)
