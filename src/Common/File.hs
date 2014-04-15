@@ -75,8 +75,8 @@ dirname
 
 -- | Remove the directory prefix
 notdir :: FilePath -> FilePath
-notdir fname
-  = last (splitDirectories fname)
+notdir
+  = FilePath.takeFileName
 
 notext :: FilePath -> FilePath
 notext fname
