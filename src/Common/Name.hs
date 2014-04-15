@@ -235,30 +235,6 @@ postpend :: String -> Name -> Name
 postpend s name
   = newQualified (nameModule name) (nameId name ++ s)
 
-
-----------------------------------------------------------------
--- camel-case to dash-case
-----------------------------------------------------------------
-camelToDash :: String -> String
-camelToDash s
-  = case splitCamel s of
-      (x:xs) -> x ++ concatMap (\y -> '-' : map toLower y) xs
-      _      -> ""
-
-splitCamel :: String -> [String]
-splitCamel ""  = []
-splitCamel ('-':cs) = splitCamel cs
-splitCamel (c:cs)
-  = let (pre,post) = span (not . isBreak) cs
-    in if null pre
-        then let (pre2,post2) = span isUpper post
-             in if (null pre2 || (not (null post2) && isBreak (head post2)))
-                 then (c:pre2) : splitCamel post2
-                 else (c:init pre2) : splitCamel (last pre2 : post2)
-        else (c:pre) : splitCamel post 
-  where
-    isBreak c = isUpper c || c=='-' 
-
 ----------------------------------------------------------------
 -- name to file path
 ----------------------------------------------------------------
