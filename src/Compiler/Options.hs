@@ -29,7 +29,8 @@ import Lib.PPrint
 import Lib.Printer
 import Common.Failure         ( raiseIO )
 import Common.ColorScheme
-import Common.File            
+import Common.File
+import Common.System
 import Common.Syntax          ( Target (..), Host(..) )
 import Compiler.Package
 

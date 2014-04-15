@@ -42,6 +42,7 @@ import Common.Name            -- ( Name, newName, qualify, asciiEncode )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractiveModule, nameSystemCore, nameMain, nameTpWrite, nameTpIO )
 import Common.Error
 import Common.File
+import Common.System
 import Common.ColorScheme
 import Common.Message         ( table )
 import Common.Syntax

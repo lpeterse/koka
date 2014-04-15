@@ -28,6 +28,7 @@ import System.Directory ( doesFileExist, doesDirectoryExist
                         , createDirectoryIfMissing, canonicalizePath
                         , getHomeDirectory )
 import Common.File
+import Common.System
 import Lib.Trace
 import Lib.JSON
 

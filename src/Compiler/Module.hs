@@ -25,7 +25,8 @@ import Lib.PPrint
 import Common.Range           ( Range )
 import Common.Name            ( Name, newName)
 import Common.Error
-import Common.File            ( FileTime, fileTime0, maxFileTimes, splitDirectories )
+import Common.System          ( FileTime, fileTime0, maxFileTimes )
+import Common.File            ( splitDirectories )
 
 import Syntax.Syntax          
 import Static.FixityResolve   ( Fixities, fixitiesEmpty, fixitiesNew, fixitiesCompose )
