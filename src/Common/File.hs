@@ -68,10 +68,10 @@ extname :: FilePath -> FilePath
 extname
   = FilePath.takeExtension
 
--- | Return the directory prefix (including last separator if present)
+-- | Return the directory prefix
 dirname :: FilePath -> FilePath
-dirname fname
-  = joinPaths (init (splitDirectories fname))
+dirname
+  = FilePath.takeDirectory
 
 -- | Remove the directory prefix
 notdir :: FilePath -> FilePath

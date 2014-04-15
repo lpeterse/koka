@@ -29,7 +29,6 @@ module Syntax.Parse( parseProgramFromFile
                    , keyword, dockeyword
                    ) where
 
--- import Lib.Trace
 import Data.List (intersperse)
 import Lib.PPrint hiding (string,parens,integer,semiBraces,lparen,comma,angles,rparen,rangle,langle)
 import qualified Lib.PPrint as PP (string)
@@ -387,16 +386,27 @@ externalIncludeEntry
         do (s,rng) <- stringLit
            return (target,s)
         )
-  where 
+  where
+    -- FIXME: get rid of the insane `unsafePerformIO` !!!
     preadFile :: FilePath -> FilePath -> LexParser String
     preadFile fname currentFile
       = do pos <- getPosition
-           let fpath      = if (null (dirname fname)) then joinPath (dirname currentFile) fname else fname
-               mbContent  = unsafePerformIO $ exCatch (do{ content <- readFile fpath; return (Just content) }) (\exn -> return Nothing)
+           -- Example:
+           --   currentFile = "lib/std/core.kk"
+           --   fname       = "core-inline.cs"
+           -- If `fname` does not carry a leading path (dirname == ".")
+           -- assume it is in the same directory as `currentFile`.
+           let fpath      = if dirname fname == "."
+                              then joinPath (dirname currentFile) fname
+                              else fname
+               mbContent  = unsafePerformIO $ exCatch
+                              ( do content <- readFile fpath
+                                   return $ Just content
+                              )
+                              (\exn -> return Nothing)
            case mbContent of
              Just content -> return content
              Nothing      -> fail ("unable to read external file: " ++ fpath)
-  
 
 externalBody :: LexParser ([(Target,ExternalCall)],Range)
 externalBody 
@@ -423,7 +433,6 @@ externalCall
        (s,rng) <- stringLit 
        return (f s,rng)
 
-                 
 externalTarget
   = do specialId "cs"
        return CS
