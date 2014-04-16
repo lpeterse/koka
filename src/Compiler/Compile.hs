@@ -85,6 +85,7 @@ import qualified Core.Pretty
 import Core.Parse(  parseCore )
 
 import System.Directory ( doesFileExist )
+import System.Cmd
 import Compiler.Package
 
 data Terminal 
@@ -822,9 +823,9 @@ codeGenCS term flags modules compileTarget outBase core
                           _              -> "-t:library -out:" ++ targetName  
        let cmd = (csc flags ++ " " ++ targetFlags ++ " -o -nologo -warn:4 " ++ searchFlags ++ linkFlags ++ dquote outcs)        
        -- trace cmd $ return () 
-       runSystem cmd
+       _ <- system cmd
        -- run the program
-       return (Just (runSystem targetName))
+       return (Just (system targetName >> return ()))
 
 
 codeGenJS :: Terminal -> Flags -> [Module] -> CompileTarget a -> FilePath -> Core.Core -> IO (Maybe (IO ()))
@@ -866,9 +867,9 @@ codeGenJS term flags modules compileTarget outBase core
             
             case host flags of
               Browser ->
-               do return (Just (runSystem (dquote outHtml ++ " &")))
+               do return (Just (system (dquote outHtml ++ " &") >> return ()))
               Node ->
-               do return (Just (runSystem ("node " ++ outjs))) 
+               do return (Just (system ("node " ++ outjs) >> return ())) 
 
   
 copyIFaceToOutputDir :: Terminal -> Flags -> FilePath -> PackageName -> [Module] -> IO ()

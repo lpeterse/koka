@@ -10,7 +10,6 @@ module Common.System(
                     -- * System
                       getEnvPaths, getEnvVar
                     , searchPaths, searchPathsEx
-                    , runSystem
                     , getProgramPath, getInstallDir
 
                     -- * Files
@@ -22,7 +21,6 @@ module Common.System(
                     ) where
 
 import Data.Char        ( toLower, isSpace )
-import System.Cmd       ( system )
 import System.Exit      ( ExitCode(..) )
 import System.Environment ( getEnvironment, getProgName )
 import System.Directory ( doesFileExist, doesDirectoryExist
@@ -37,13 +35,6 @@ import Common.File
 import qualified Platform.Console as C (getProgramPath)
 import Platform.Filetime
 import qualified System.FilePath as FilePath
-
-runSystem :: String -> IO ()
-runSystem command
-  = do exitCode <- system command
-       case exitCode of
-         ExitFailure i -> raiseIO ("command failed:\n " ++ command )
-         ExitSuccess   -> return ()
 
 -- | Compare two file modification times (uses 0 for non-existing files)
 fileTimeCompare :: FilePath -> FilePath -> IO Ordering
