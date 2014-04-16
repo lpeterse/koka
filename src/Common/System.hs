@@ -49,13 +49,10 @@ runSystemRaw command
 runSystem :: String -> IO ()
 runSystem command
   = do -- putStrLn ("system: " ++ command)
-       exitCode <- runSystemEx command
+       exitCode <- system (FilePath.normalise command)
        case exitCode of
          ExitFailure i -> raiseIO ("command failed:\n " ++ command )
          ExitSuccess   -> return ()
-
-runSystemEx command
-  = system (FilePath.normalise command)
 
 -- | Compare two file modification times (uses 0 for non-existing files)
 fileTimeCompare :: FilePath -> FilePath -> IO Ordering
