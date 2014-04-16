@@ -565,7 +565,10 @@ searchPackageIface flags currentDir mbPackage name
                 if exist then return (Just reliface) 
                  else return Nothing
          Just package
-          -> searchPackages (packages flags) currentDir (head (splitDirectories package)) postfix 
+          -> let h = case splitDirectories package of
+                       [] -> ""
+                       xs -> head xs
+             in  searchPackages (packages flags) currentDir h postfix 
 
 searchOutputIface :: Flags -> Name -> IO (Maybe FilePath)
 searchOutputIface flags name

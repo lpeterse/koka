@@ -100,7 +100,9 @@ loadedName ld
 
 modPackageName :: Module -> PackageName
 modPackageName mod
-  = last (splitDirectories (modPackageQName mod)) 
+  = case splitDirectories (modPackageQName mod) of
+      [] -> ""
+      xs -> last xs
 
 modPackagePath :: Module -> PackageName
 modPackagePath mod

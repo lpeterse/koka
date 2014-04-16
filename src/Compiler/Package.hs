@@ -49,7 +49,10 @@ packagesEmpty :: Packages
 packagesEmpty = Packages [] []
 
 pkgName :: Package -> PackageName
-pkgName pkg = last $ splitDirectories $ pkgQualName pkg
+pkgName pkg
+  = case splitDirectories (pkgQualName pkg) of
+      [] -> ""
+      xs -> last xs
 
 ---------------------------------------------------------------
 -- search packages

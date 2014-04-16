@@ -61,11 +61,9 @@ splitSearchPath :: String -> [FilePath]
 splitSearchPath
   = FilePath.splitSearchPath
 
--- FIXME: current code base cannot deal with empty result list!
 splitDirectories :: FilePath -> [FilePath]
 splitDirectories x
-  = let y = FilePath.splitDirectories x
-    in  if null y then [""] else y
+  = FilePath.splitDirectories x
 
 joinPath :: FilePath -> FilePath -> FilePath
 joinPath
