@@ -6,35 +6,40 @@
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
 
-module Common.System( 
-                    -- * System
-                      getEnvPaths, getEnvVar
-                    , searchPaths, searchPathsEx
-                    , getProgramPath, getInstallDir
+module Common.System      ( getEnvPaths, getEnvVar
+                          , searchPaths, searchPathsEx
+                          , getProgramPath, getInstallDir
 
-                    -- * Files
-                    , FileTime, fileTime0, maxFileTime, maxFileTimes
-                    , fileTimeCompare, getFileTime
-                    , getFileTimeOrCurrent, getCurrentTime
-                    , copyTextFile, copyTextIfNewer, copyTextIfNewerWith, copyTextFileWith
-                    , copyBinaryFile, copyBinaryIfNewer
-                    ) where
+                          , FileTime, fileTime0, maxFileTime, maxFileTimes
+                          , fileTimeCompare, getFileTime
+                          , getFileTimeOrCurrent, getCurrentTime
+                          , copyTextFile, copyTextIfNewer
+                          , copyTextIfNewerWith, copyTextFileWith
+                          , copyBinaryFile, copyBinaryIfNewer
+                          ) where
 
-import Data.Char        ( toLower, isSpace )
-import System.Exit      ( ExitCode(..) )
-import System.Environment ( getEnvironment, getProgName )
-import System.Directory ( doesFileExist, doesDirectoryExist
-                        , copyFile
-                        , getCurrentDirectory, getDirectoryContents
-                        , createDirectoryIfMissing, canonicalizePath )
+import Data.Char          ( toLower
+                          , isSpace
+                          )
+import System.Environment ( getEnvironment
+                          , getProgName
+                          )
+import System.Directory   ( doesFileExist
+                          , doesDirectoryExist
+                          , copyFile
+                          , getCurrentDirectory
+                          , getDirectoryContents
+                          , createDirectoryIfMissing
+                          , canonicalizePath
+                          )
 
+import qualified System.FilePath  as FilePath
 import qualified Platform.Runtime as B ( copyBinaryFile )
-import Common.Failure   ( raiseIO, catchIO )
-import Common.File
+import qualified Platform.Console as C ( getProgramPath )
 
-import qualified Platform.Console as C (getProgramPath)
+import Common.Failure     ( catchIO )
+import Common.File
 import Platform.Filetime
-import qualified System.FilePath as FilePath
 
 -- | Compare two file modification times (uses 0 for non-existing files)
 fileTimeCompare :: FilePath -> FilePath -> IO Ordering
