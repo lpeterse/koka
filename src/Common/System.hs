@@ -10,7 +10,7 @@ module Common.System      ( getEnvPaths, getEnvVar
                           , searchPaths, searchPathsEx
                           , getProgramPath, getInstallDir
 
-                          , FileTime, fileTime0, maxFileTime, maxFileTimes
+                          , FileTime, fileTime0, maxFileTimes
                           , fileTimeCompare, getFileTime
                           , getFileTimeOrCurrent, getCurrentTime
                           , copyTextFile, copyTextIfNewer
@@ -37,7 +37,7 @@ import qualified System.FilePath  as FilePath
 import qualified Platform.Runtime as B ( copyBinaryFile )
 import qualified Platform.Console as C ( getProgramPath )
 
-import Common.Failure     ( catchIO )
+import Common.Failure   ( raiseIO, catchIO )
 import Common.File
 import Platform.Filetime
 
@@ -48,13 +48,9 @@ fileTimeCompare fname1 fname2
        time2 <- getFileTime fname2
        return (compare time1 time2)
 
-maxFileTime :: FileTime -> FileTime -> FileTime
-maxFileTime t1 t2
-  = if (t1 >= t2) then t1 else t2
-
 maxFileTimes :: [FileTime] -> FileTime
-maxFileTimes times
-  = foldr maxFileTime fileTime0 times
+maxFileTimes
+  = maximum . (fileTime0:)
 
 copyTextFile :: FilePath -> FilePath -> IO ()
 copyTextFile src dest
