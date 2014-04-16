@@ -10,7 +10,7 @@ module Common.System(
                     -- * System
                       getEnvPaths, getEnvVar
                     , searchPaths, searchPathsEx
-                    , runSystem, runSystemRaw
+                    , runSystem
                     , getProgramPath, getInstallDir
 
                     -- * Files
@@ -38,18 +38,9 @@ import qualified Platform.Console as C (getProgramPath)
 import Platform.Filetime
 import qualified System.FilePath as FilePath
 
-runSystemRaw :: String -> IO ()
-runSystemRaw command
-  = do -- putStrLn ("system: " ++ command)
-       exitCode <- system command
-       case exitCode of
-         ExitFailure i -> raiseIO ("command failed:\n " ++ command )
-         ExitSuccess   -> return ()
-
 runSystem :: String -> IO ()
 runSystem command
-  = do -- putStrLn ("system: " ++ command)
-       exitCode <- system (FilePath.normalise command)
+  = do exitCode <- system command
        case exitCode of
          ExitFailure i -> raiseIO ("command failed:\n " ++ command )
          ExitSuccess   -> return ()
@@ -60,7 +51,6 @@ fileTimeCompare fname1 fname2
   = do time1 <- getFileTime fname1 
        time2 <- getFileTime fname2
        return (compare time1 time2)
-
 
 maxFileTime :: FileTime -> FileTime -> FileTime
 maxFileTime t1 t2
