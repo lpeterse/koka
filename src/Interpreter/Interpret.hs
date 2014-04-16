@@ -16,6 +16,8 @@ import Lib.Trace
 
 import System.Random              
 import System.Directory            ( getCurrentDirectory, setCurrentDirectory )
+import System.Cmd                  ( system )
+import System.Exit                 ( ExitCode(..) )
 import Data.List                   ( isPrefixOf )
 import Data.Char                   ( isSpace )
 import Control.Monad
@@ -28,7 +30,7 @@ import Lib.Printer
 import Common.Failure         ( raiseIO, catchIO )
 import Common.ColorScheme
 import Common.File            ( dropExtensions, joinPath, isPathSep )
-import Common.System          ( searchPaths, runSystem )
+import Common.System          ( searchPaths, runSystem, runSystem' )
 import Common.Name            ( Name, unqualify, qualify, newName )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractive, nameInteractiveModule, nameSystemCore, toShortModuleName )
 import Common.Range     
@@ -197,8 +199,10 @@ command st cmd
                               command st Reload 
                    }
   
-  Shell cmd   -> do{ runSystem cmd 
-                   ; messageLn st ""
+  Shell cmd   -> do{ ec <- system cmd
+                   ; case ec of
+                      ExitSuccess   -> messageLn st ""
+                      ExitFailure i -> messageInfoLn st $ show i
                    ; interpreterEx st
                    }
   
