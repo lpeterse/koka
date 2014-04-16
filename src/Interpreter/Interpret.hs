@@ -30,7 +30,7 @@ import Lib.Printer
 import Common.Failure         ( raiseIO, catchIO )
 import Common.ColorScheme
 import Common.File            ( dropExtensions, joinPath, isPathSep )
-import Common.System          ( searchPaths, runSystem, runSystem' )
+import Common.System          ( searchPaths )
 import Common.Name            ( Name, unqualify, qualify, newName )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractive, nameInteractiveModule, nameSystemCore, toShortModuleName )
 import Common.Range     
@@ -519,7 +519,8 @@ runEditorAt st fpath line col
   = let command  = replace line col (editor (flags st)) fpath 
     in if null (editor (flags st))
         then raiseIO ("no editor specified. (use the \"koka-editor\" environment variable?)")
-        else runSystem command
+        else do _ <- system command
+                return ()
         
 replace :: Int -> Int -> FilePath -> String -> String
 replace line col s fpath
