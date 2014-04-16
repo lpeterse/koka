@@ -19,14 +19,10 @@ module Common.File(
                   , splitDirectories
                   , isPathSep
                   , searchPathSeparator
-                  , commonPathPrefix
                   , normalise
                   ) where
 
-import Data.List        ( intersperse, isPrefixOf )
 import qualified System.FilePath as FilePath
-
-import Test.QuickCheck
 
 {--------------------------------------------------------------------------
   File paths
@@ -82,12 +78,6 @@ isPathSep c
 searchPathSeparator :: Char
 searchPathSeparator
   = FilePath.searchPathSeparator
-
-commonPathPrefix :: FilePath -> FilePath -> FilePath
-commonPathPrefix s1 s2
-  = joinPaths $ map fst
-              $ takeWhile (\(c,d) -> c == d)
-              $ zip (splitDirectories s1) (splitDirectories s2)
 
 normalise :: FilePath -> FilePath
 normalise

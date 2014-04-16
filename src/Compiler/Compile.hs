@@ -901,6 +901,12 @@ packagePatch iface current imported source
                   unlines $ pre ++ (rline : post)
          _ -> source  
   where
+    commonPathPrefix :: FilePath -> FilePath -> FilePath
+    commonPathPrefix s1 s2
+      = joinPaths $ map fst
+                  $ takeWhile (\(c,d) -> c == d)
+                  $ zip (splitDirectories s1) (splitDirectories s2)
+
     makeRelativeToDir :: FilePath -> FilePath -> FilePath
     makeRelativeToDir  target current
       = let pre         = commonPathPrefix current target        
