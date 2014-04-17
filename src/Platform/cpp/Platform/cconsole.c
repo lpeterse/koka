@@ -155,24 +155,6 @@ void consoleSetState( int state )
   consoleSetAttributes(attributes);
 }
 
-const char* consoleGetProgramPath()
-{
-  static int cached = 0;
-  static char programPath[256];
-  static TCHAR tprogramPath[256];
-  if (cached==0) {
-    DWORD n = GetModuleFileName( NULL, tprogramPath, 256 );
-    if (n < 0) n = 0;
-    int i;
-    for(i = 0; i < n; i++) {
-      programPath[i] = (char)tprogramPath[i];
-    }  
-    programPath[i] = 0;
-    cached = 1;
-  }
-  return programPath;
-}
-
 /*------------------------------------------------------------------------
    Unsupported console functionality
 ------------------------------------------------------------------------*/
@@ -212,8 +194,4 @@ void consoleSetState( int state )
 {
 }
 
-const char* consoleGetProgramPath()
-{
-  return "";
-}
 #endif

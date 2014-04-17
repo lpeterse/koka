@@ -360,7 +360,6 @@ extractErrors options
 getEnvOptions :: IO [String]
 getEnvOptions
   = do csc <- getEnvCsc
-       idir<- getInstallDir
        xss <- mapM getEnvOption environment
        return (concat ({- ["--install-dir=" ++ idir]:-} csc:xss))
   where

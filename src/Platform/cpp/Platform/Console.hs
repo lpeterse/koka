@@ -15,7 +15,6 @@
 -----------------------------------------------------------------------------
 module Platform.Console( setColor, setBackColor, setReverse, setUnderline
                        , withConsole, bracketConsole
-                       , getProgramPath
                        ) where
 
 #ifdef __GHCI__
@@ -31,7 +30,6 @@ module Platform.Console( setColor, setBackColor, setReverse, setUnderline
   setUnderline b    = undefined
   withConsole f     = undefined
   bracketConsole io = undefined
-  getProgramPath    = undefined
 
 #else
 
@@ -74,13 +72,6 @@ bracketConsole io
        finally io (do hFlush stdout
                       consoleSetState con)
 
--- | Retrieve the path to the currently executing program. Only reliable on windows.
-getProgramPath :: IO String
-getProgramPath
-  = do cpath <- consoleGetProgramPath
-       peekCString cpath
-
-
 foreign import ccall consoleInit      :: IO Int
 foreign import ccall consoleDone      :: IO ()
 foreign import ccall consoleGetState  :: IO Int
@@ -89,6 +80,5 @@ foreign import ccall consoleSetColor      :: Int -> IO ()
 foreign import ccall consoleSetBackColor  :: Int -> IO ()
 foreign import ccall consoleSetReverse    :: Int -> IO ()
 foreign import ccall consoleSetUnderline  :: Int -> IO ()
-foreign import ccall consoleGetProgramPath :: IO CString
 
 #endif

@@ -14,4 +14,3 @@ void consoleSetReverse( int rev );
 void consoleSetUnderline( int underline );
 int consoleGetState( void );
 void consoleSetState( int state );
-const char* consoleGetProgramPath();

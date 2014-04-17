@@ -8,7 +8,6 @@
 
 module Common.System      ( getEnvPaths, getEnvVar
                           , searchPaths, searchPathsEx
-                          , getProgramPath, getInstallDir
 
                           , FileTime, fileTime0, maxFileTimes
                           , fileTimeCompare, getFileTime
@@ -33,7 +32,6 @@ import System.Directory   ( doesFileExist
                           )
 
 import qualified System.FilePath  as FilePath
-import qualified Platform.Console as C ( getProgramPath )
 
 import Common.Failure   ( raiseIO, catchIO )
 import Common.File
@@ -80,35 +78,6 @@ copyTextIfNewerWith always srcName outName transform
        if (ord == GT)
         then do copyTextFileWith srcName outName transform
         else do return ()
-
-
-getInstallDir :: IO FilePath
-getInstallDir
-  = do p <- getProgramPath
-       let d  = takeDirectory p
-           ds = splitDirectories d
-           result = case reverse ds of
-                      ("bin":es)   -> joinPaths (reverse es)
-                      (_:"out":es) -> joinPaths (reverse es)
-                      _            -> d
-       -- trace ("install-dir: " ++ result ++ ": " ++ show ds) $
-       return result
-
-getProgramPath :: IO FilePath
-getProgramPath
-  = do p <- C.getProgramPath  -- works on windows
-       if (not (null p)) 
-        then return p
-        else do name <- getProgName
-                if (null name)
-                 then return "main"
-                 else if (any isPathSep name)
-                  then return name
-                  else do paths <- getEnvPaths "PATH"
-                          mbp   <- searchPaths paths [] name  -- search along the PATH
-                          case mbp of
-                            Just fname -> return fname
-                            Nothing    -> return name
 
 ---------------------------------------------------------------
 -- file searching
