@@ -74,7 +74,7 @@ import Compiler.Module
 -- needed for code generation
 import Data.Char              ( toUpper )
 import Lib.PPrint             hiding (dquote)
-import Platform.Config        ( exeExtension, sourceExtension )
+import Platform.Config        ( exeExtension, libExtension, sourceExtension )
 
 import Backend.CSharp.FromCore( csharpFromCore )
 import Backend.JavaScript.FromCore( javascriptFromCore )
@@ -783,11 +783,11 @@ codeGenCS term flags modules compileTarget outBase core
        writeDoc outcs cs
        when (showAsmCSharp flags) (termDoc term cs)
 
-       let linkFlags  = concat ["-r:" ++ outName flags (showModName (Core.importName imp)) ++ dllExtension ++ " " 
+       let linkFlags  = concat ["-r:" ++ outName flags (showModName (Core.importName imp)) ++ libExtension ++ " " 
                                     | imp <- Core.coreProgImports core] -- TODO: link to correct package!
            targetName = case compileTarget of
                           Executable _ _ -> dquote ((if null (exeName flags) then outBase else outName flags (exeName flags)) ++ exeExtension)
-                          _              -> dquote (outBase ++ dllExtension)
+                          _              -> dquote (outBase ++ libExtension)
            targetFlags= case compileTarget of
                           Executable _ _ -> "-t:exe -out:" ++ targetName
                           _              -> "-t:library -out:" ++ targetName  
@@ -849,8 +849,8 @@ copyIFaceToOutputDir term flags iface targetPath imported
   = do let outName = joinPaths [outDir flags, targetPath, takeFileName iface]
        copyTextIfNewer (rebuild flags) iface outName
        if (CS `elem` targets flags)
-        then do let libSrc = dropExtensions iface ++ dllExtension
-                let libOut = dropExtensions outName ++ dllExtension
+        then do let libSrc = dropExtensions iface ++ libExtension
+                let libOut = dropExtensions outName ++ libExtension
                 copyTextIfNewer (rebuild flags) libSrc libOut
         else return ()
        if (JS `elem` targets flags)
@@ -903,9 +903,6 @@ outName flags s
   = if (null (outDir flags))
      then s
      else joinPath (outDir flags) s
-
-dllExtension 
-  = ".dll"
 
 ifaceExtension
   = sourceExtension ++ "i"

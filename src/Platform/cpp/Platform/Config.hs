@@ -53,10 +53,12 @@ exeExtension   :: String
 pathSep,pathDelimiter :: Char
 #if (OSTYPE==windows || OSTYPE==win32)
 exeExtension  = ".exe"
+libExtension  = ".dll"
 pathSep       = '\\'
 pathDelimiter = ';'
 #else
 exeExtension  = ""
+libExtension  = ".o"
 pathSep       = '/'
 pathDelimiter = ':'
 #endif
