@@ -88,13 +88,17 @@ import System.Directory ( doesFileExist )
 import System.Cmd
 import Compiler.Package
 
-data Terminal 
-  = Terminal { termError    :: ErrorMessage -> IO ()
-             , termPhase    :: String -> IO ()
-             , termPhaseDoc :: Doc -> IO ()
-             , termType     :: Scheme -> IO ()
-             , termDoc      :: Doc -> IO ()
-             }
+-- | A Terminal is the compiler's sink for notifications and error messages.
+-- An instance is supplied by the caller of the compiler functions.
+-- The methods being `IO ()` values implies that the compiler always needs
+-- `IO` context for evaluation.
+data Terminal
+   = Terminal { termError    :: ErrorMessage -> IO ()
+              , termPhase    :: String       -> IO ()
+              , termPhaseDoc :: Doc          -> IO ()
+              , termType     :: Scheme       -> IO ()
+              , termDoc      :: Doc          -> IO ()
+              }
 
 data CompileTarget a
   = Object
