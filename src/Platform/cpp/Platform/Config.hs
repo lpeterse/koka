@@ -66,6 +66,9 @@ pathDelimiter = ':'
 sourceExtension :: String
 sourceExtension = ".kk"
 
+ifaceExtension  :: String
+ifaceExtension  = ".kki"
+
 buildDate :: String
 buildDate  = __DATE__
 

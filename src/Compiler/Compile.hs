@@ -74,7 +74,7 @@ import Compiler.Module
 -- needed for code generation
 import Data.Char              ( toUpper )
 import Lib.PPrint             hiding (dquote)
-import Platform.Config        ( exeExtension, libExtension, sourceExtension )
+import Platform.Config        ( exeExtension, libExtension, sourceExtension, ifaceExtension )
 
 import Backend.CSharp.FromCore( csharpFromCore )
 import Backend.JavaScript.FromCore( javascriptFromCore )
@@ -899,9 +899,6 @@ outName flags s
   = if (null (outDir flags))
      then s
      else joinPath (outDir flags) s
-
-ifaceExtension
-  = sourceExtension ++ "i"
 
 compilerCatch comp term defValue io 
   = io `catchSystem` \msg -> 
