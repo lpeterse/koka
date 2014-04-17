@@ -40,6 +40,7 @@ import Common.Range           -- ( Range, sourceName )
 import Common.Name            -- ( Name, newName, qualify, asciiEncode )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractiveModule, nameSystemCore, nameMain, nameTpWrite, nameTpIO )
 import Common.Error
+import Common.IOErr
 import Common.File
 import Common.System
 import Common.ColorScheme
@@ -104,41 +105,6 @@ data CompileTarget a
   = Object
   | Library
   | Executable { entry :: Name, info :: a }
-
-{--------------------------------------------------------------------------
-  The IOErr monad
---------------------------------------------------------------------------}
-
-data IOErr a = IOErr (IO (Error a))
-
-instance Functor IOErr where
-  fmap f (IOErr ie) = IOErr (fmap (fmap f) ie)
-
-instance Monad IOErr where
-  return x          = IOErr (return (return x))
-  (IOErr ie) >>= f  = IOErr (do err <- ie
-                                case checkError err of
-                                   Right (x,w) -> case f x of
-                                                   IOErr ie' -> do err <- ie'
-                                                                   return (addWarnings w err)
-                                   Left msg  -> return (errorMsg msg  ))
-
-runIOErr :: IOErr a -> IO (Error a)
-runIOErr (IOErr ie)
-  = ie
-
-liftError :: Error a -> IOErr a
-liftError err
-  = IOErr $ return err
-
-liftIO :: IO a -> IOErr a
-liftIO io
-  = IOErr $ do x <- io
-               return (return x)
-
-lift :: IO (Error a) -> IOErr a
-lift ie
-  = IOErr ie
 
 {--------------------------------------------------------------------------
   Compilation

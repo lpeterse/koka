@@ -336,6 +336,7 @@ var hsModules = [
   "Common.Message",
   "Common.Unique",
   "Common.Error",
+  "Common.IOErr",
   "Common.Syntax",
   "Common.System",
   
