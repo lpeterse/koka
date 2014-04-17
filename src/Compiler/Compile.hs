@@ -293,7 +293,7 @@ compileProgramFromFile term flags mdls compileTarget rootPath stem
                                      (text "module name" <+> 
                                       ppcolor colorModule (pretty (programName program)) <+> 
                                       text "is not a suffix of the file path" <+>
-                                      parens (ppcolor colorSource $ text $ dquote $ stem)))
+                                      parens (ppcolor colorSource $ text $ "\"" ++ stem ++ "\"")))
        let stemName = nameFromFile stem
        compileProgram' term flags mdls compileTarget fname program{ programName = stemName }
 
@@ -796,6 +796,8 @@ codeGenCS term flags modules compileTarget outBase core
        _ <- system cmd
        -- run the program
        return (Just (system targetName >> return ()))
+  where
+    dquote s = "\"" ++ s ++ "\""
 
 
 codeGenJS :: Terminal -> Flags -> [Module] -> CompileTarget a -> FilePath -> Core.Core -> IO (Maybe (IO ()))
@@ -837,7 +839,7 @@ codeGenJS term flags modules compileTarget outBase core
             
             case host flags of
               Browser ->
-               do return (Just (system (dquote outHtml ++ " &") >> return ()))
+               do return (Just (system (outHtml ++ " &") >> return ()))
               Node ->
                do return (Just (system ("node " ++ outjs) >> return ())) 
 
@@ -892,9 +894,6 @@ packagePatch iface current imported source
           ((pattern,replacement):_) -> replacement ++ replaceWith mapping (drop (length pattern) s)
           _                         -> head s : replaceWith mapping (tail s) 
 
-
-dquote s
-  = "\"" ++ s ++ "\""
 
 outName flags s
   = if (null (outDir flags))
