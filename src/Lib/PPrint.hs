@@ -376,7 +376,7 @@ renderPrettyB rfrac w x
             Empty         -> best b n k ds
             Char c        -> B.singleton c    `mappend` best b n (k+1) ds
             Text s        -> B.fromText  s    `mappend` best b n (k+T.length s) ds
-            Line _        -> B.singleton '\n' `mappend` (B.fromText (indentation i) `mappend` best b i i ds)
+            Line _        -> B.singleton '\n' `mappend` (B.fromText (spaces i) `mappend` best b i i ds)
             Cat x y       -> best b n k ((i,x):((i,y):ds))
             Nest j x      -> let i' = i+j
                                  z  = if b == 0 then i' else b
@@ -485,7 +485,7 @@ displayP p w simpleDoc
       display' k (SChar i c x)     = do{ writeText p (T.pack [c]); display (k+1) x }
       display' k (SText i s x)     | k+(T.length s) >= w && i+(T.length s) < w = display k (SLine (i+1) (skipSpaces (SText i s x)))
       display' k (SText i s x)     = do{ writeText p s; display (k+(T.length s)) x  }
-      display' k (SLine i x)       = do{ writeTextLn p T.empty; writeText p (indentation i); display i x }
+      display' k (SLine i x)       = do{ writeTextLn p T.empty; writeText p (spaces i); display i x }
       display' k (SColorOpen f c x)= do{ let with = if f then withColor else withBackColor
                                        ; (kc,cont) <- with p c (display k x)
                                        ; display kc cont
@@ -513,17 +513,17 @@ writePrettyLn p doc
 -----------------------------------------------------------
 -- default pretty printers: show, putDoc and hPutDoc
 -----------------------------------------------------------
+
 instance Show Doc where
   showsPrec d doc       = displayS (renderPretty 0.5 defaultWidth doc)
 
 putDoc :: Doc -> IO ()
 putDoc doc              = hPutDoc stdout doc
-                             
 
 hPutDoc :: Handle -> Doc -> IO ()
 hPutDoc handle doc      
   = hPutDocW defaultWidth handle doc
-    
+
 hPutDocW :: Int -> Handle -> Doc -> IO ()
 hPutDocW width handle doc
   = TL.hPutStr handle (B.toLazyText $ renderPrettyB 0.8 width doc)
@@ -537,34 +537,27 @@ writeDocW width fpath doc
   = do h <- openFile fpath WriteMode
        hPutDocW width h doc `finally` hClose h
 
------------------------------------------------------------
--- insert spaces
--- "indentation" used to insert tabs but tabs seem to cause
--- more trouble than they solve :-)
------------------------------------------------------------
-spaces n        | n <= 0    = T.empty
-                | otherwise = T.replicate n " "
+spaces   :: Int -> T.Text
+spaces 0  = ""
+spaces 1  = " "
+spaces 2  = "  "
+spaces 3  = "   "
+spaces 4  = "    "
+spaces 5  = "     "
+spaces 6  = "      "
+spaces 7  = "       "
+spaces 8  = "        "
+spaces 9  = "         "
+spaces 10 = "          "
+spaces 11 = "           "
+spaces 12 = "            "
+spaces 13 = "             "
+spaces 14 = "              "
+spaces 15 = "               "
+spaces 16 = "                "
+spaces 17 = "                 "
+spaces n  | n <= 0    = T.empty
+          | otherwise = T.replicate n " "
 
-indentation 0  = ""
-indentation 1  = " "
-indentation 2  = "  "
-indentation 3  = "   "
-indentation 4  = "    "
-indentation 5  = "     "
-indentation 6  = "      "
-indentation 7  = "       "
-indentation 8  = "        "
-indentation 9  = "         "
-indentation 10 = "          "
-indentation 11 = "           "
-indentation 12 = "            "
-indentation 13 = "             "
-indentation 14 = "              "
-indentation 15 = "               "
-indentation 16 = "                "
-indentation 17 = "                 "
-indentation n  = spaces n
-                
 defaultWidth :: Int
 defaultWidth = 200
-             
