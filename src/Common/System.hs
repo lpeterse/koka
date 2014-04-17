@@ -15,7 +15,6 @@ module Common.System      ( getEnvPaths, getEnvVar
                           , getFileTimeOrCurrent, getCurrentTime
                           , copyTextFile, copyTextIfNewer
                           , copyTextIfNewerWith, copyTextFileWith
-                          , copyBinaryFile, copyBinaryIfNewer
                           ) where
 
 import Data.Char          ( toLower
@@ -34,7 +33,6 @@ import System.Directory   ( doesFileExist
                           )
 
 import qualified System.FilePath  as FilePath
-import qualified Platform.Runtime as B ( copyBinaryFile )
 import qualified Platform.Console as C ( getProgramPath )
 
 import Common.Failure   ( raiseIO, catchIO )
@@ -68,20 +66,6 @@ copyTextFileWith src dest transform
                       content <- readFile src
                       writeFile dest (transform content)) 
             (error ("could not copy file " ++ show src ++ " to " ++ show dest))
-
-copyBinaryFile :: FilePath -> FilePath -> IO ()
-copyBinaryFile src dest
-  = if (src == dest) 
-     then return ()
-     else catchIO (B.copyBinaryFile src dest) (\_ -> error ("could not copy file " ++ show src ++ " to " ++ show dest))
-
-copyBinaryIfNewer :: Bool -> FilePath -> FilePath -> IO ()
-copyBinaryIfNewer always srcName outName       
-  = do ord <- if always then return GT else fileTimeCompare srcName outName
-       if (ord == GT)
-        then do copyBinaryFile srcName outName
-        else do -- putStrLn $ "no copy for: " ++ srcName ++ " to " ++ outName
-                return ()
 
 copyTextIfNewer :: Bool -> FilePath -> FilePath -> IO ()
 copyTextIfNewer always srcName outName       

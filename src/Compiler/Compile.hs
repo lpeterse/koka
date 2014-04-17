@@ -881,7 +881,7 @@ copyIFaceToOutputDir term flags iface targetPath imported
        if (CS `elem` targets flags)
         then do let libSrc = dropExtensions iface ++ dllExtension
                 let libOut = dropExtensions outName ++ dllExtension
-                copyBinaryIfNewer (rebuild flags) libSrc libOut
+                copyTextIfNewer (rebuild flags) libSrc libOut
         else return ()
        if (JS `elem` targets flags)
         then do let jsSrc = dropExtensions iface ++ ".js"

@@ -12,13 +12,11 @@
 module Platform.Runtime( exCatch
                        , unsafePerformIO
                        , finally
-                       , copyBinaryFile
                        ) where
 
 import IO ( ioeGetErrorString )
 import IOExts( unsafePerformIO )
 import System( ExitCode, system )
-import Directory( copyFile )
 
 finally :: IO a -> IO b -> IO a
 finally io post
@@ -30,6 +28,3 @@ exCatch :: IO a -> (String -> IO a) -> IO a
 exCatch io handler
   = catch io (\err -> handler (ioeGetErrorString err))
 
-copyBinaryFile :: FilePath -> FilePath -> IO ()
-copyBinaryFile src dest
-  = copyFile src dest -- may cause trouble on windows (since it uses text mode to copy)

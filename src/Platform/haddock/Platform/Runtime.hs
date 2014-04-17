@@ -12,11 +12,9 @@
 module Platform.Runtime( exCatch
                        , unsafePerformIO
                        , finally
-                       , copyBinaryFile
                        ) where
 
 import IO ( ioeGetErrorString )
-import System.IO( withBinaryFile, hGetContents, hPutStr, IOMode(..) )
 
 unsafePerformIO :: IO a -> a
 unsafePerformIO io
@@ -33,9 +31,3 @@ exCatch :: IO a -> (String -> IO a) -> IO a
 exCatch io handler
   = catch io (\err -> handler (ioeGetErrorString err))
 
-copyBinaryFile :: FilePath -> FilePath -> IO ()
-copyBinaryFile src dest
-  = withBinaryFile src ReadMode $ \hsrc ->
-    withBinaryFile dest WriteMode $ \hdest ->
-    do content <- hGetContents hsrc
-       hPutStr hdest content
