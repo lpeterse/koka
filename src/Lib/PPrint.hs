@@ -13,7 +13,6 @@
      <http://cm.bell-labs.com/cm/cs/who/wadler/papers/prettier/prettier.ps>
 -}
 -----------------------------------------------------------------------------
-{-# LANGUAGE OverloadedStrings #-}
 module Lib.PPrint
         ( Doc, Docs
         , Pretty(pretty,prettyList), putPretty
@@ -538,26 +537,26 @@ writeDocW width fpath doc
        hPutDocW width h doc `finally` hClose h
 
 spaces   :: Int -> T.Text
-spaces 0  = ""
-spaces 1  = " "
-spaces 2  = "  "
-spaces 3  = "   "
-spaces 4  = "    "
-spaces 5  = "     "
-spaces 6  = "      "
-spaces 7  = "       "
-spaces 8  = "        "
-spaces 9  = "         "
-spaces 10 = "          "
-spaces 11 = "           "
-spaces 12 = "            "
-spaces 13 = "             "
-spaces 14 = "              "
-spaces 15 = "               "
-spaces 16 = "                "
-spaces 17 = "                 "
+spaces 0  = T.pack ""
+spaces 1  = T.pack " "
+spaces 2  = T.pack "  "
+spaces 3  = T.pack "   "
+spaces 4  = T.pack "    "
+spaces 5  = T.pack "     "
+spaces 6  = T.pack "      "
+spaces 7  = T.pack "       "
+spaces 8  = T.pack "        "
+spaces 9  = T.pack "         "
+spaces 10 = T.pack "          "
+spaces 11 = T.pack "           "
+spaces 12 = T.pack "            "
+spaces 13 = T.pack "             "
+spaces 14 = T.pack "              "
+spaces 15 = T.pack "               "
+spaces 16 = T.pack "                "
+spaces 17 = T.pack "                 "
 spaces n  | n <= 0    = T.empty
-          | otherwise = T.replicate n " "
+          | otherwise = T.replicate n $ T.pack " "
 
 defaultWidth :: Int
 defaultWidth = 200
