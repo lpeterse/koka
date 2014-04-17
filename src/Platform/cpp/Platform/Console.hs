@@ -17,21 +17,7 @@ module Platform.Console( setColor, setBackColor, setReverse, setUnderline
                        , withConsole, bracketConsole
                        ) where
 
-#ifdef __GHCI__
-
-  --  Linking the foreign C code may break when invoked via GHCI.
-  --  We supply undefined stubs in this case. This allows for
-  --  testing all parts of the compiler except running the compiler
-  --  itself.
-
-  setColor c        = undefined
-  setBackColor c    = undefined
-  setReverse b      = undefined
-  setUnderline b    = undefined
-  withConsole f     = undefined
-  bracketConsole io = undefined
-
-#else
+#if defined(__WIN32__) || defined(__MINGW32__) || defined(__CYGWIN__)
 
 import Platform.Runtime( finally )
 import System.IO       ( hFlush, stdout )
@@ -80,5 +66,25 @@ foreign import ccall consoleSetColor      :: Int -> IO ()
 foreign import ccall consoleSetBackColor  :: Int -> IO ()
 foreign import ccall consoleSetReverse    :: Int -> IO ()
 foreign import ccall consoleSetUnderline  :: Int -> IO ()
+
+#else
+
+setColor         :: Enum c => c -> IO ()
+setColor c        = return ()
+
+setBackColor     :: Enum c => c -> IO ()
+setBackColor c    = return ()
+
+setReverse       :: Bool -> IO ()
+setReverse b      = return ()
+
+setUnderline     :: Bool -> IO ()
+setUnderline b    = return ()
+
+withConsole      :: (Bool -> IO a) -> IO a
+withConsole f     = f False
+
+bracketConsole   :: IO a -> IO a
+bracketConsole io = io
 
 #endif
