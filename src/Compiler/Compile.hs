@@ -312,7 +312,7 @@ compileProgram' term flags mdls compileTarget fname program
   = do -- liftIO $ termPhase term ("resolve " ++ show (getName program))
        ftime <- liftIO (getFileTimeOrCurrent fname)
        let name   = getName program
-           outIFace = outName flags (showModName name) ++ ifaceExtension
+           outIFace = outName flags (moduleNameToPath name) ++ ifaceExtension
            mod    = Module name outIFace fname "" "" [] (Just program) (failure "Compiler.Compile.compileProgram: recursive module import") Nothing ftime
            allmods = addOrReplaceModule mod mdls
            loaded = initialLoaded { loadedModule = mod 
@@ -526,7 +526,7 @@ lookupImport imp (mod:mods)
 
 searchPackageIface :: Flags -> FilePath -> Maybe PackageName -> Name -> IO (Maybe FilePath)
 searchPackageIface flags currentDir mbPackage name
-  = do let postfix = showModName name ++ ifaceExtension -- map (\c -> if c == '.' then '_' else c) (show name) 
+  = do let postfix = moduleNameToPath name ++ ifaceExtension -- map (\c -> if c == '.' then '_' else c) (show name) 
        case mbPackage of
          Nothing 
           -> searchPackages (packages flags) currentDir "" postfix
@@ -543,7 +543,7 @@ searchPackageIface flags currentDir mbPackage name
 
 searchOutputIface :: Flags -> Name -> IO (Maybe FilePath)
 searchOutputIface flags name
-  = do let postfix = showModName name ++ ifaceExtension -- map (\c -> if c == '.' then '_' else c) (show name) 
+  = do let postfix = moduleNameToPath name ++ ifaceExtension -- map (\c -> if c == '.' then '_' else c) (show name) 
            iface = joinPath (outDir flags) postfix
        -- trace ("search output iface: " ++ show name ++ ": " ++ iface) $ return ()
        exist <- doesFileExist iface
@@ -564,8 +564,8 @@ searchSourceFile flags currentDir fname
 
 searchIncludeIface :: Flags -> FilePath -> Name -> IO (Maybe FilePath)
 searchIncludeIface flags currentDir name
-  = do -- trace ("search include iface: " ++ showModName name ++ " from " ++ currentDir) $ return ()
-       mbP <- searchPathsEx (currentDir : includePath flags) [] (showModName name ++ ifaceExtension) 
+  = do -- trace ("search include iface: " ++ moduleNameToPath name ++ " from " ++ currentDir) $ return ()
+       mbP <- searchPathsEx (currentDir : includePath flags) [] (moduleNameToPath name ++ ifaceExtension) 
        case mbP of
          Just (root,stem) 
            -> return $ Just (joinPath root stem)
@@ -595,7 +595,7 @@ typeCheck loaded flags line coreImports program
            fname   = sourceName (programSource program)
            module1 = (moduleNull (getName program))
                                { modSourcePath = fname
-                               , modPath = outName flags (showModName (getName program)) ++ ifaceExtension
+                               , modPath = outName flags (moduleNameToPath (getName program)) ++ ifaceExtension
                                , modProgram    = Just program
                                , modWarnings   = warnings
                                }
@@ -710,7 +710,7 @@ capitalize s
 codeGen :: Terminal -> Flags -> CompileTarget Type -> Loaded -> IO Loaded
 codeGen term flags compileTarget loaded   
   = do let mod         = loadedModule loaded
-           outBase     = outName flags (showModName (modName mod))
+           outBase     = outName flags (moduleNameToPath (modName mod))
                
        let env      = (prettyEnvFromFlags flags){ context = loadedName loaded, importsMap = loadedImportMap loaded }
            outIface = outBase ++ ifaceExtension
@@ -783,7 +783,7 @@ codeGenCS term flags modules compileTarget outBase core
        writeDoc outcs cs
        when (showAsmCSharp flags) (termDoc term cs)
 
-       let linkFlags  = concat ["-r:" ++ outName flags (showModName (Core.importName imp)) ++ libExtension ++ " " 
+       let linkFlags  = concat ["-r:" ++ outName flags (moduleNameToPath (Core.importName imp)) ++ libExtension ++ " " 
                                     | imp <- Core.coreProgImports core] -- TODO: link to correct package!
            targetName = case compileTarget of
                           Executable _ _ -> dquote ((if null (exeName flags) then outBase else outName flags (exeName flags)) ++ exeExtension)
@@ -892,9 +892,6 @@ packagePatch iface current imported source
           ((pattern,replacement):_) -> replacement ++ replaceWith mapping (drop (length pattern) s)
           _                         -> head s : replaceWith mapping (tail s) 
 
-
-showModName name
-  = moduleNameToPath name -- asciiEncode True (show name)
 
 dquote s
   = "\"" ++ s ++ "\""
