@@ -44,16 +44,16 @@ mainh     = mainArgs "-ilib -itest --console=raw"
 -- | Parse options, dispatch terminal type, call compiler/interpreter.
 mainArgs :: String -> IO ()
 mainArgs args
-  = do (flags, mode) <- Options.getOptions args
-       let with | not $ null $ Options.redirectOutput flags
-                = withFileNoColorPrinter (Options.redirectOutput flags)
-                | Options.console flags == "html"
-                = withHtmlColorPrinter
-                | Options.console flags == "ansi"
-                = withColorPrinter
-                | otherwise
-                = withNoColorPrinter
-       with (mainMode flags mode) 
+  = do  (flags, mode) <- Options.getOptions args
+        let withPrinter | not $ null $ Options.redirectOutput flags
+                        = withFileNoColorPrinter (Options.redirectOutput flags)
+                        | Options.console flags == "html"
+                        = withHtmlColorPrinter
+                        | Options.console flags == "ansi"
+                        = withColorPrinter
+                        | otherwise
+                        = withNoColorPrinter
+        withPrinter (mainMode flags mode)
 
 -- | Decides based on 'Options.Mode' whether to run as compiler/interpreter/etc.
 mainMode :: Options.Flags -> Options.Mode -> ColorPrinter -> IO ()
@@ -67,36 +67,60 @@ mainMode flags mode p
        -> Options.showVersion p
       Options.ModeCompiler files
        -- independently invoke the compiler once per input file
-       -> mapM_ (compile p flags) files
+       -> mapM_ (compileAndPrintErrors p flags) files
       Options.ModeInteractive files
        -- interactive mode gets the user an interactive shell
        -- this call returns if the user explicitly quits the session
        -> interpret p flags files
 
--- | Gets executed if the 'compiler path' has been chosen.
-compile :: ColorPrinter -> Options.Flags -> FilePath -> IO ()
-compile p flags fname
+-- | Compile a single file designated by filename and print errors
+compileAndPrintErrors :: ColorPrinter -> Options.Flags -> FilePath -> IO ()
+compileAndPrintErrors p flags fname
   = do let exec = Executable (newName "main") ()
-       err <- compileFile term flags [] 
-                (if (not (Options.evaluate flags)) then (if Options.library flags then Library else exec) else exec) fname
+       err <- compileFile
+                term
+                flags
+                []
+                ( if not (Options.evaluate flags)
+                    then ( if Options.library flags
+                             then Library
+                             else exec
+                         )
+                    else exec
+                )
+                fname
        case checkError err of
-         Left msg 
-           -> do putPrettyLn p (ppErrorMessage (Options.showSpan flags) cscheme msg)
+         Left msg
+           -> do putPrettyLn p $ ppErrorMessage (Options.showSpan flags) cscheme msg
                  exitFailure
-         Right (Loaded gamma kgamma synonyms newtypes constructors _ imports _
-                (Module modName _ _ _ _ _warnings rawProgram core _ modTime) _ 
-               , warnings)
-           -> do when (not (null warnings))
-                   (let msg = ErrorWarning warnings ErrorZero
-                    in putPrettyLn p (ppErrorMessage (Options.showSpan flags) cscheme msg))
+         Right ( Loaded
+                  gamma
+                  kgamma
+                  synonyms
+                  newtypes
+                  constructors
+                  _
+                  imports
+                  _
+                  ( Module modName _ _ _ _ _ rawProgram core _ modTime )
+                  _
+               , warnings )
+           -> do when (not $ null warnings)
+                   $ putPrettyLn p
+                   $ ppErrorMessage (Options.showSpan flags) cscheme
+                   $ ErrorWarning warnings ErrorZero
+
                  when (Options.showKindSigs flags)
-                   (do putPrettyLn p (pretty (kgammaFilter modName kgamma))
-                       let localSyns = synonymsFilter modName synonyms
-                       when (not (synonymsIsEmpty localSyns)) 
-                        (putPrettyLn p (ppSynonyms (prettyEnv flags modName imports) localSyns))
-                       )
+                   $ do putPrettyLn p $ pretty $ kgammaFilter modName kgamma
+                        let localSyns = synonymsFilter modName synonyms
+                        when (not $ synonymsIsEmpty localSyns)
+                          $ putPrettyLn p
+                          $ ppSynonyms (prettyEnv flags modName imports) localSyns
+
                  when (Options.showTypeSigs flags)
-                   (do putPrettyLn p (ppGamma (prettyEnv flags modName imports) (gammaFilter modName gamma)))
+                   $ putPrettyLn p
+                   $ ppGamma (prettyEnv flags modName imports)
+                   $ gammaFilter modName gamma
   where
     term
       = Terminal (putErrorMessage p (Options.showSpan flags) cscheme) 
