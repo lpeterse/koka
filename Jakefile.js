@@ -299,7 +299,7 @@ function defD(name,val) { return ("-D" + name + (val ? "=\\\"" + val + "\\\" " :
 
 var hsModules = [ 
   { name: "Platform.Config", 
-      flags: defD("MAIN",main) + defD("VERSION",version) + defD("VARIANT",variant) + "-DOSTYPE=" + process.platform,
+      flags: defD("MAIN",main) + defD("VERSION",version) + defD("VARIANT",variant) + (process.platform=='win32'?'-D__WIN32__':''),
       deps: ["package.json"] }, // dependent on this build file (due to version)
   "Platform.Runtime",  
   "Platform.Var",
