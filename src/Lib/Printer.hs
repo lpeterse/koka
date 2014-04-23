@@ -26,9 +26,9 @@ module Lib.Printer(
               ) where
 
 import Data.List( intersperse )
+import Data.IORef (IORef, newIORef, writeIORef, readIORef)
 -- import Data.Char( toLower )
 import System.IO  ( hFlush, stdout, hPutStr, hPutStrLn, openFile, IOMode(..), hClose, Handle )  
-import Platform.Var( Var, newVar, putVar, takeVar )
 import Platform.Runtime( finally )
 import Platform.Config( exeExtension )
 import qualified Platform.Console as Con
@@ -173,7 +173,7 @@ instance Printer FilePrinter where
 -- | Use a color printer that uses ANSI escape sequences.
 withAnsiPrinter :: (AnsiPrinter -> IO a) -> IO a
 withAnsiPrinter f
-  = do ansi <- newVar ansiDefault
+  = do ansi <- newIORef ansiDefault
        finally (f (Ansi ansi)) (do ansiEscapeIO seqReset
                                    hFlush stdout)
 
@@ -182,7 +182,8 @@ ansiDefault
 
 
 -- | Standard ANSI console
-newtype AnsiPrinter = Ansi (Var AnsiConsole)
+-- FIXME: refactor the IORef away
+newtype AnsiPrinter = Ansi (IORef AnsiConsole)
 data AnsiConsole = AnsiConsole{ fcolor    :: Color
                               , bcolor    :: Color
                               , invert    :: Bool
@@ -226,10 +227,10 @@ ansiWithConsole p f io
 
 ansiSetConsole :: AnsiPrinter -> (AnsiConsole -> AnsiConsole) -> IO AnsiConsole
 ansiSetConsole (Ansi varAnsi) f
-  = do con <- takeVar varAnsi
+  = do con <- readIORef varAnsi
        let new = f con
        ansiEscapeIO (seqSetConsole con new)
-       putVar varAnsi new
+       writeIORef varAnsi new
        return con
 
 ansiEscapeIO :: [T.Text] -> IO ()

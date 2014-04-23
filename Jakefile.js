@@ -302,7 +302,6 @@ var hsModules = [
       flags: defD("MAIN",main) + defD("VERSION",version) + defD("VARIANT",variant) + (process.platform=='win32'?'-D__WIN32__':''),
       deps: ["package.json"] }, // dependent on this build file (due to version)
   "Platform.Runtime",  
-  "Platform.Var",
   { name: "Platform.Console", deps: [sourcePath("Platform/cconsole.c")] },
   "Platform.ReadLine",
   "Platform.GetOptions",
