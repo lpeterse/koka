@@ -30,9 +30,6 @@ setVersion();
 //-----------------------------------------------------
 var exeExt      = (path.sep==="\\" ? ".exe" : "");
 
-var platformVariant = "cpp"; // other options: hugs and haddock
-var platformVariantPath = path.join("Platform",platformVariant,"Platform")+path.sep;
-
 var hsCompiler  = "ghc";
 var hsFlags     = "-fwarn-incomplete-patterns";
 var hsLinkFlags = ["base","containers","directory","filepath","process","random","mtl","text","parsec","QuickCheck"].map(function(p){ return "-package " + p; }).join(" ");
@@ -501,7 +498,7 @@ function sourcePathFromModule(moduleName,extension) {
 }
 
 function sourcePath(sourceName) {
-  sourceName = pathnorm(sourceName).replace(new RegExp("^Platform\\" + path.sep), platformVariantPath );
+  sourceName = pathnorm(sourceName);
   return path.join(sourceDir,sourceName);
 }
 
@@ -510,7 +507,7 @@ function objectFile(fname,extension) {
   if (/\.h$/.test(fname)) {
     return fname;
   }
-  var filename = fname.replace(platformVariantPath, "Platform" + path.sep);  
+  var filename = fname;  
   // otherwise return the corresponding object file
   extension = extension || ".o";
   return filename.replace(sourceDir,buildDir).replace(/\.[a-z]+$/,extension);
