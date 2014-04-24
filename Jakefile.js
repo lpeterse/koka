@@ -45,6 +45,7 @@ var libraryDir= "lib";
 var testDir   = "test";
 
 var variant   = process.env.variant || "debug";
+var cli       = process.env.cli     || "generic";
 var buildDir  = path.join(outputDir, variant);
 var depFile   = path.join(buildDir,"dependencies");
 var mainExe   = path.join(buildDir,main + "-" + version + exeExt);
@@ -67,6 +68,20 @@ else if (variant === "debug") {
   // hsRunFlags  += " +RTS -xc -RTS"
 }
 
+// Haskeline is a pure-Haskell readline replacement (also works on Windows!)
+// As it is not part of Haskell-Platform we don't link it by default,
+// although it is very recommended.
+if (cli === "haskeline") {
+  hsFlags     += " -DCLI=CLI_HASKELINE"
+  hsLinkFlags += " -package haskeline"
+}
+else if (cli === "generic") {
+  // nothing
+} 
+else {
+  jake.logger.error("unknown value '" + cli + "' for environment variable 'cli'");
+  process.exit(1);
+}
 
 
 //-----------------------------------------------------

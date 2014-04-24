@@ -10,51 +10,44 @@
     Module that exports readline functionality
 -}
 -----------------------------------------------------------------------------
-module Platform.ReadLine( withReadLine, readLine, readLineEx, addHistory
+module Platform.ReadLine( ReadLineT, runReadLineT, readLine, readLineEx
                         ) where
 
+#define CLI_HASKELINE 2
 
-#ifdef READLINE
-import qualified READLINE as R
-#else
-import System.IO
-#endif
+#if CLI == CLI_HASKELINE
 
-withReadLine :: IO a -> IO a
-readLine     :: String -> IO (Maybe String)
-readLineEx   :: String -> IO () -> IO (Maybe String)
-addHistory   :: String -> IO ()
+import System.Console.Haskeline
 
+type ReadLineT m a = InputT m a
 
-#ifdef READLINE
+runReadLineT :: ReadLineT IO a -> IO a
+runReadLineT
+  = runInputT defaultSettings
 
-withReadLine io
-  = do R.initialize 
-       R.setCompletionEntryFunction (Just (\input -> return []))
-       io
-
+readLine     :: String -> ReadLineT IO (Maybe String)
 readLine prompt
-  = do line <- R.readline prompt
-       case reverse line of
-         []       -> readLine prompt
-         '\\' : t -> do line2 <- readLine prompt
-                        return (reverse t ++ "\n" ++ line2)
-         _        -> return line
+  = getInputLine prompt
 
-addHistory line
-  = R.addHistory line
-
+readLineEx   :: String -> a -> ReadLineT IO (Maybe String)
 readLineEx prompt putPrompt
-  = readLine prompt
+  = getInputLine prompt
 
 #else
 
-withReadLine io
+import System.IO
+
+type ReadLineT m a = m a
+
+runReadLineT :: ReadLineT IO a -> IO a
+runReadLineT io
   = io
 
+readLine     :: String -> ReadLineT IO (Maybe String)
 readLine prompt
   = readLineEx prompt (do{ putStr prompt; hFlush stdout})
 
+readLineEx   :: String -> ReadLineT IO () -> ReadLineT IO (Maybe String)
 readLineEx prompt putPrompt
   = do s <- readLines
        return (Just s)
@@ -67,8 +60,5 @@ readLineEx prompt putPrompt
              '\\' : t -> do line2 <- readLines
                             return (reverse t ++ "\n" ++ line2)
              _        -> return line
-
-addHistory line
-  = return ()
 
 #endif

@@ -21,10 +21,11 @@ import System.Exit                 ( ExitCode(..) )
 import Data.List                   ( isPrefixOf )
 import Data.Char                   ( isSpace )
 import Control.Monad
+import Control.Monad.IO.Class      ( MonadIO, liftIO )
 
-import Platform.Config hiding (programName)
+import Platform.Config hiding ( programName )
 import qualified Platform.Config as Config
-import Platform.ReadLine      ( withReadLine, readLineEx, addHistory )
+import Platform.ReadLine      ( ReadLineT, runReadLineT, readLineEx )
 import Lib.PPrint
 import Lib.Printer       
 import Common.Failure         ( raiseIO, catchIO )
@@ -69,39 +70,30 @@ data State = State{  printer    :: ColorPrinter
                    }
 
 
+io :: MonadIO m => IO a -> m a
+io = liftIO
+
 {---------------------------------------------------------------
   Main
 ---------------------------------------------------------------}
+
 interpret ::  ColorPrinter -> Flags -> [FilePath] -> IO ()
 interpret printer flags0 files
-  = withReadLine $
-    do{ let st0 = (State printer flags0 False initialLoaded initialLoaded [] (programNull nameInteractiveModule) Nothing [] initialLoaded) 
-      ; messageHeader st0 
-      ; let st2 = st0
-      -- ; st2 <- findBackend st0  
-      -- ; st2 <- loadPrimitives st1
-   {-
-      ; let preludeSt = st2
-      ; if (null files)
-         then interpreterEx preludeSt
-         else command preludeSt (Load files)  
-   -}
-      -- ; interpreterEx st2
-  
-      ; err <- loadFilesErr (terminal st2) st2{ flags = flags0{ showCore = False, showAsmCSharp = False }} [(show (nameSystemCore))]  -- map (\c -> if c == '.' then fileSep else c) 
-                  `catchIO` (\msg -> do messageError st2 msg; 
-                                        return (errorMsg (ErrorGeneral rangeNull (text msg))))
-      ; case checkError err of
-          Left msg    -> do messageInfoLn st2 ("unable to load the " ++ show nameSystemCore ++ " module; standard functions are not available")
-                            messageEvaluation st2
-                            interpreterEx st2{ flags      = (flags st2){ evaluate = False }
-                                           , errorRange = Just (getRange msg) }
-          Right (preludeSt,warnings)
-                      -> if (null files)
-                             then interpreterEx preludeSt{ lastLoad = [] }
-                             else command preludeSt (Load files)  
-  
-      }
+  = runReadLineT $ do let st0 = (State printer flags0 False initialLoaded initialLoaded [] (programNull nameInteractiveModule) Nothing [] initialLoaded) 
+                      io $ messageHeader st0 
+                      let st2 = st0
+                      err <- io $ loadFilesErr (terminal st2) st2{ flags = flags0{ showCore = False, showAsmCSharp = False }} [(show (nameSystemCore))]  -- map (\c -> if c == '.' then fileSep else c) 
+                       `catchIO` (\msg -> do messageError st2 msg; 
+                                             return (errorMsg (ErrorGeneral rangeNull (text msg))))
+                      case checkError err of
+                        Left msg    -> do io $ messageInfoLn st2 ("unable to load the " ++ show nameSystemCore ++ " module; standard functions are not available")
+                                          io $ messageEvaluation st2
+                                          interpreterEx st2{ flags      = (flags st2){ evaluate = False }
+                                                           , errorRange = Just (getRange msg) }
+                        Right (preludeSt,warnings)
+                          -> if (null files)
+                               then interpreterEx preludeSt{ lastLoad = [] }
+                               else command preludeSt (Load files)
 
 messageEvaluation st
   = messageInfoLnLn st "evaluation is disabled"
@@ -109,11 +101,11 @@ messageEvaluation st
 {---------------------------------------------------------------
   Interpreter loop
 ---------------------------------------------------------------}
-interpreter ::  State -> IO ()
+interpreter ::  State -> ReadLineT IO ()
 interpreter st
   = interpreterEx st{ errorRange = Nothing }
 
-interpreterEx ::  State -> IO ()
+interpreterEx ::  State -> ReadLineT IO ()
 interpreterEx st
   = do{ cmd <- getCommand st
       -- ; messageLn ""
@@ -123,148 +115,144 @@ interpreterEx st
 {---------------------------------------------------------------
   Interprete a command
 ---------------------------------------------------------------}
-command ::  State -> Command -> IO ()
+
+command ::  State -> Command -> ReadLineT IO ()
 command st cmd
-  = let term = terminal st
-    in do{ case cmd of
-  Eval line   -> do{ err <- compileExpression term (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine line
-                   ; checkInfer st True err $ \ld -> 
-                     do if (not (evaluate (flags st))) 
-                         then let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
-                              in messageSchemeEffect st tp
-                         else messageLn st ""
-                        interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
-                   }
-
-  Define line -> do err <- compileValueDef term (flags st) (loaded st) (program st) (lineNo st) line
-                    checkInfer2 st True err $ \(defName,ld) ->
-                       do{ let tp    = infoType $ gammaFind defName (loadedGamma ld)
-                               tpdoc = prettyScheme st tp
-                               sig   = show defName ++ " :: " ++ show tpdoc
-                         ; messagePrettyLnLn st (text (show (unqualify defName)) <+> text ":" <+> tpdoc)
-                         ; interpreter st{ program  = maybe (program st) id (modProgram (loadedModule ld))
-                                         , loaded   = ld
-                                         , defines  = filter (\(name,_) -> defName /= name) (defines st)
-                                                      ++ [(defName,[dropLet line,""])]
-                                         }
-                         }
-
-  TypeOf line -> do err <- compileExpression term (flags st) (loaded st) Object (program st) bigLine line
-                    checkInfer st True err $ \ld ->
-                       do{ let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
-                         ; messageSchemeEffect st tp
-                         ; interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
-                         }
-
-  KindOf line -> do err <- compileType term (flags st) (loaded st) (program st) bigLine line 
-                    checkInfer st True err $ \ld ->
-                       do{ let kind = kgammaFind (getName (program st)) nameType (loadedKGamma ld)
-                         ; messagePrettyLnLn st (prettyKind (colorSchemeFromFlags (flags st)) (snd kind))
-                         ; interpreter st{ loaded = ld }
-                         }
-
-  TypeDef line-> -- trace ("modules: " ++ show (map (show . modName . loadedModule) (loadedModules st))) $
-                 do err <- compileTypeDef term (flags st) (loaded st) (program st) (lineNo st) line
-                    checkInfer2 st True err $ \(defName, ld) ->
-                     do{ let (qname,kind) = kgammaFind (getName (program st)) defName (loadedKGamma ld)                           
-                       ; messagePrettyLnLn st (text (show defName) <+> text "::" <+> pretty kind)
-                       ; interpreter st{ program  = maybe (program st) id $ modProgram (loadedModule ld)
-                                       , loaded   = ld
-                                       , defines  = filter (\(name,_) -> defName /= name) (defines st)
-                                                    ++ [(defName,[line,""])] 
-                                       }
+  = case cmd of
+      Eval line   -> do{ err <- io $ compileExpression term (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine line
+                       ; checkInfer st True err $ \ld -> 
+                         do if (not (evaluate (flags st))) 
+                             then let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
+                                  in io $ messageSchemeEffect st tp
+                             else io $ messageLn st ""
+                            interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
                        }
 
-  Load fnames -> do{ let st' = st{ lastLoad = fnames } 
-                   ; loadFiles term st' (reset st') fnames 
-                   }
-
-  Reload      -> do{ loadFiles term st (reset st) (lastLoad st) {- (map (modPath . loadedModule) (tail (loadedModules st))) -} }
-
-  
-  Edit []     -> do{ let fpath = lastFilePath st
-                   ; if (null fpath)
-                      then do remark st "nothing to edit"
-                              interpreterEx st
-                      else do runEditor st fpath
-                              command st Reload 
-                   }
-  Edit fname  -> do{ mbpath <- searchSource (flags st) "" (newName fname) -- searchPath (includePath (flags st)) sourceExtension fname
-                   ; case mbpath of
-                      Nothing    
-                        -> do messageErrorMsgLnLn st (errorFileNotFound (flags st) fname)
-                              interpreter st
-                      Just (root,fname) 
-                        -> do runEditor st (joinPath root fname)
-                              command st Reload 
-                   }
-  
-  Shell cmd   -> do{ ec <- system cmd
-                   ; case ec of
-                      ExitSuccess   -> messageLn st ""
-                      ExitFailure i -> messageInfoLn st $ show i
-                   ; interpreterEx st
-                   }
-  
-  ChangeDir d -> do{ if (null d)
-                      then do{ fpath <- getCurrentDirectory
-                             ; messageInfoLnLn st fpath
+      Define line -> do err <- io $ compileValueDef term (flags st) (loaded st) (program st) (lineNo st) line
+                        checkInfer2 st True err $ \(defName,ld) ->
+                           do{ let tp    = infoType $ gammaFind defName (loadedGamma ld)
+                                   tpdoc = prettyScheme st tp
+                                   sig   = show defName ++ " :: " ++ show tpdoc
+                             ; io $ messagePrettyLnLn st (text (show (unqualify defName)) <+> text ":" <+> tpdoc)
+                             ; interpreter st{ program  = maybe (program st) id (modProgram (loadedModule ld))
+                                             , loaded   = ld
+                                             , defines  = filter (\(name,_) -> defName /= name) (defines st)
+                                                          ++ [(defName,[dropLet line,""])]
+                                             }
                              }
-                      else setCurrentDirectory d
-                   ; interpreterEx st
-                   }
 
-  Options opts-> do{ (newFlags,mode) <- processOptions (flags st) (words opts)
-                   ; let setFlags files
-                          = do if (null files)
-                                then messageLn st ""
-                                else messageError st "(ignoring file arguments)"
-                               interpreter (st{ flags = newFlags })
-                   ; case mode of
-                       ModeHelp     -> do doc <- commandLineHelp (flags st)
-                                          messagePrettyLn st doc
-                                          interpreterEx st
-                       ModeVersion  -> do showVersion (printer st)
-                                          messageLn st ""
-                                          interpreter st
-                       ModeCompiler files     -> setFlags files
-                       ModeInteractive files  -> setFlags files            
-                       -- ModeDoc files          -> setFlags files
-                   }
+      TypeOf line -> do err <- io $ compileExpression term (flags st) (loaded st) Object (program st) bigLine line
+                        checkInfer st True err $ \ld ->
+                           do{ let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
+                             ; io $ messageSchemeEffect st tp
+                             ; interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
+                             }
 
-  Error err   -> do{ messageInfoLn st err
-                   ; messageInfoLn st "invalid command."
-                   ; messageInfoLnLn st "(type \":?\" for help on commands)"
-                   ; interpreterEx st
-                   }
+      KindOf line -> do err <- io $ compileType term (flags st) (loaded st) (program st) bigLine line 
+                        checkInfer st True err $ \ld ->
+                           do{ let kind = kgammaFind (getName (program st)) nameType (loadedKGamma ld)
+                             ; io $ messagePrettyLnLn st (prettyKind (colorSchemeFromFlags (flags st)) (snd kind))
+                             ; interpreter st{ loaded = ld }
+                             }
 
-  Show showcmd-> do{ showCommand st showcmd
-                   ; interpreterEx st
-                   }
-  
-  Quit        -> do{ putQuote st
-                   }
+      TypeDef line-> -- trace ("modules: " ++ show (map (show . modName . loadedModule) (loadedModules st))) $
+                     do err <- io $ compileTypeDef term (flags st) (loaded st) (program st) (lineNo st) line
+                        checkInfer2 st True err $ \(defName, ld) ->
+                         do{ let (qname,kind) = kgammaFind (getName (program st)) defName (loadedKGamma ld)                           
+                           ; io $ messagePrettyLnLn st (text (show defName) <+> text "::" <+> pretty kind)
+                           ; interpreter st{ program  = maybe (program st) id $ modProgram (loadedModule ld)
+                                           , loaded   = ld
+                                           , defines  = filter (\(name,_) -> defName /= name) (defines st)
+                                                        ++ [(defName,[line,""])] 
+                                           }
+                           }
 
-  None        -> do{ interpreterEx st }
-      }
-   `catchIO` \msg ->
-      do{ messageError st msg
-        ; interpreter st
-        }
+      Load fnames -> do{ let st' = st{ lastLoad = fnames } 
+                       ; loadFiles term st' (reset st') fnames 
+                       }
 
+      Reload      -> do{ loadFiles term st (reset st) (lastLoad st) {- (map (modPath . loadedModule) (tail (loadedModules st))) -} }
 
+      
+      Edit []     -> do{ let fpath = lastFilePath st
+                       ; if (null fpath)
+                          then do io $ remark st "nothing to edit"
+                                  interpreterEx st
+                          else do io $ runEditor st fpath
+                                  command st Reload 
+                       }
+      Edit fname  -> do{ mbpath <- io $ searchSource (flags st) "" (newName fname) -- searchPath (includePath (flags st)) sourceExtension fname
+                       ; case mbpath of
+                          Nothing    
+                            -> do io $ messageErrorMsgLnLn st (errorFileNotFound (flags st) fname)
+                                  interpreter st
+                          Just (root,fname) 
+                            -> do io $ runEditor st (joinPath root fname)
+                                  command st Reload 
+                       }
+      
+      Shell cmd   -> do{ ec <- io $ system cmd
+                       ; case ec of
+                          ExitSuccess   -> io $ messageLn st ""
+                          ExitFailure i -> io $ messageInfoLn st $ show i
+                       ; interpreterEx st
+                       }
+      
+      ChangeDir d -> do{ if (null d)
+                          then do{ fpath <- io $ getCurrentDirectory
+                                 ; io $ messageInfoLnLn st fpath
+                                 }
+                          else io $ setCurrentDirectory d
+                       ; interpreterEx st
+                       }
+
+      Options opts-> do{ (newFlags,mode) <- io $ processOptions (flags st) (words opts)
+                       ; let setFlags files
+                              = do if (null files)
+                                    then io $ messageLn st ""
+                                    else io $messageError st "(ignoring file arguments)"
+                                   interpreter (st{ flags = newFlags })
+                       ; case mode of
+                           ModeHelp     -> do doc <- io $ commandLineHelp (flags st)
+                                              io $ messagePrettyLn st doc
+                                              interpreterEx st
+                           ModeVersion  -> do io $ showVersion (printer st)
+                                              io $ messageLn st ""
+                                              interpreter st
+                           ModeCompiler files     -> setFlags files
+                           ModeInteractive files  -> setFlags files            
+                           -- ModeDoc files          -> setFlags files
+                       }
+
+      Error err   -> do{ io $ messageInfoLn st err
+                       ; io $ messageInfoLn st "invalid command."
+                       ; io $ messageInfoLnLn st "(type \":?\" for help on commands)"
+                       ; interpreterEx st
+                       }
+
+      Show showcmd-> do{ io $ showCommand st showcmd
+                       ; interpreterEx st
+                       }
+      
+      Quit        -> do{ io $ putQuote st
+                       }
+
+      None        -> do{ interpreterEx st }
+  where
+    term = terminal st
 
 {--------------------------------------------------------------------------
   File loading
 --------------------------------------------------------------------------}
-loadFiles :: Terminal -> State -> State -> [FilePath] -> IO ()
+loadFiles :: Terminal -> State -> State -> [FilePath] -> ReadLineT IO ()
 loadFiles term originalSt startSt files
-  = do err <- loadFilesErr term startSt files
+  = do err <- io $ loadFilesErr term startSt files
        case checkError err of
          Left msg -> interpreterEx originalSt{ errorRange = Just (getRange msg) }
          Right (st,warnings) -> interpreterEx st 
 
 
+loadFilesErr :: Terminal -> State -> [FilePath] -> IO (Error State)
 loadFilesErr term startSt fileNames
   = do walk [] startSt fileNames
   where
@@ -347,23 +335,23 @@ docNotFound cscheme path name
 {--------------------------------------------------------------------------
   Helpers
 --------------------------------------------------------------------------}
-checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> IO ()) -> IO ()
+checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInfer st = checkInferWith st id
 checkInfer2 st = checkInferWith st (\(a,c) -> c)
 
-checkInfer3 ::  State -> Bool -> Error (a,b,Loaded) -> ((a,b,Loaded) -> IO ()) -> IO ()
+checkInfer3 ::  State -> Bool -> Error (a,b,Loaded) -> ((a,b,Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInfer3 st = checkInferWith st (\(a,b,c) -> c)
 
-checkInferWith ::  State -> (a -> Loaded) -> Bool -> Error a -> (a -> IO ()) -> IO ()
+checkInferWith ::  State -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInferWith st getLoaded showMarker err f
   = case checkError err of
-      Left msg  -> do when showMarker (maybeMessageMarker st (getRange msg))
-                      messageErrorMsgLnLn st msg
+      Left msg  -> do io $ when showMarker (maybeMessageMarker st (getRange msg))
+                      io $ messageErrorMsgLnLn st msg
                       interpreterEx st{ errorRange = Just (getRange msg) }
       Right (x,ws)
                 -> do let ld = getLoaded x 
                           warnings = ws -- modWarnings (loadedModule ld)
-                      when (not (null warnings))
+                      io $ when (not (null warnings))
                         (do let msg = ErrorWarning warnings ErrorZero
                             when showMarker (maybeMessageMarker st (getRange msg))
                             messageErrorMsgLnLn st msg)
@@ -540,7 +528,7 @@ replace line col s fpath
 {--------------------------------------------------------------------------
   Messages
 --------------------------------------------------------------------------}
-getCommand :: State -> IO Command
+getCommand :: State -> ReadLineT IO Command
 getCommand st
   = do let ansiPrompt = (if isAnsiPrinter (printer st)
                           then ansiWithColor (colorInterpreter (colorSchemeFromFlags (flags st)))
@@ -549,11 +537,6 @@ getCommand st
        let input = maybe ":quit" id mbInput
        -- messageInfoLn st ("cmd: " ++ show input)
        let cmd   = readCommand input
-       case cmd of
-         Quit     -> return ()
-         Error _  -> return ()
-         _        | null input -> return () 
-                  | otherwise  -> addHistory input
        return cmd
 
 

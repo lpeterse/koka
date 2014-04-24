@@ -14,6 +14,11 @@ which will install any prerequisites. Now build and run Koka by typing:
 
     > jake 
 
+To get proper line editing support in the koka interpreter you might want to link against Haskeline, a platform independent readline replacement. First install it via cabal (if available), then tell jake to use it:
+
+    > cabal install haskeline
+    > cli=haskeline jake
+
 To see more build options, type:
 
     > jake help
