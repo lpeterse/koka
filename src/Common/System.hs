@@ -28,7 +28,6 @@ import System.Directory   ( doesFileExist
                           , getCurrentDirectory
                           , getDirectoryContents
                           , createDirectoryIfMissing
-                          , canonicalizePath
                           )
 
 import qualified System.FilePath  as FilePath
@@ -116,6 +115,6 @@ getEnvPaths name
 getEnvVar :: String -> IO String
 getEnvVar name
   = do env <- getEnvironment
-       case lookup (map toLower name) (map (\(k,v) -> (map toLower k,v)) env) of
+       case lookup name env of
          Just val -> return val
          Nothing  -> return ""
