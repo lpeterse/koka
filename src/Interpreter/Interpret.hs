@@ -79,21 +79,37 @@ io = liftIO
 
 interpret ::  ColorPrinter -> Flags -> [FilePath] -> IO ()
 interpret printer flags0 files
-  = runReadLineT $ do let st0 = (State printer flags0 False initialLoaded initialLoaded [] (programNull nameInteractiveModule) Nothing [] initialLoaded) 
-                      io $ messageHeader st0 
-                      let st2 = st0
-                      err <- io $ loadFilesErr (terminal st2) st2{ flags = flags0{ showCore = False, showAsmCSharp = False }} [(show (nameSystemCore))]  -- map (\c -> if c == '.' then fileSep else c) 
-                       `catchIO` (\msg -> do messageError st2 msg; 
-                                             return (errorMsg (ErrorGeneral rangeNull (text msg))))
-                      case checkError err of
-                        Left msg    -> do io $ messageInfoLn st2 ("unable to load the " ++ show nameSystemCore ++ " module; standard functions are not available")
-                                          io $ messageEvaluation st2
-                                          interpreterEx st2{ flags      = (flags st2){ evaluate = False }
-                                                           , errorRange = Just (getRange msg) }
-                        Right (preludeSt,warnings)
-                          -> if (null files)
-                               then interpreterEx preludeSt{ lastLoad = [] }
-                               else command preludeSt (Load files)
+  = runReadLineT
+      $ do io $ messageHeader st
+           err <- io $ loadFilesErr
+                         (terminal st)
+                         st { flags = flags0 { showCore = False, showAsmCSharp = False } }
+                         [ show nameSystemCore ]
+            -- FIXME: What does this catch? Why not returning it?
+            `catchIO` \msg -> do messageError st msg;
+                                 return $ errorMsg $ ErrorGeneral rangeNull (text msg)
+           case checkError err of
+             Left msg    -> do io $ messageInfoLn st ("unable to load the " ++ show nameSystemCore ++ " module; standard functions are not available")
+                               io $ messageEvaluation st
+                               interpreterEx st { flags      = (flags st){ evaluate = False }
+                                                , errorRange = Just (getRange msg) }
+             Right (preludeSt,warnings)
+               -> if (null files)
+                    then interpreterEx preludeSt{ lastLoad = [] }
+                    else command preludeSt (Load files)
+  where
+    st = State
+          { printer       = printer
+          , flags         = flags0
+          , evalDisable   = False
+          , loaded0       = initialLoaded
+          , loaded        = initialLoaded
+          , defines       = []
+          , program       = (programNull nameInteractiveModule)
+          , errorRange    = Nothing
+          , lastLoad      = []
+          , loadedPrelude = initialLoaded
+          }
 
 messageEvaluation st
   = messageInfoLnLn st "evaluation is disabled"
