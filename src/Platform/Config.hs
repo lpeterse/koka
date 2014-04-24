@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp #-}
+{-# LANGUAGE CPP #-}
 ------------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
 --
@@ -12,10 +12,24 @@
 -----------------------------------------------------------------------------
 module Platform.Config where
 
+#if defined(__CABAL__)
+import Data.Version
+import qualified Paths_koka as P
+#endif
+
 -- by not inlining these we avoid rebuilding too many source files (since the .hi stays unchanged)
 {-# NOINLINE version #-}
 {-# NOINLINE buildDate #-}
 {-# NOINLINE buildTime #-}
+
+version :: String
+#if   defined(__CABAL__)
+version = showVersion P.version
+#elif defined(VERSION)
+version = VERSION
+#else
+version = "?"
+#endif
 
 programName :: String
 #ifdef MAIN  
@@ -24,18 +38,13 @@ programName = MAIN
 programName = "koka"
 #endif
 
-version :: String
-#ifdef VERSION
-version = VERSION
-#else
-version = "?"
-#endif
-
 buildVariant :: String
 #ifdef VARIANT
 buildVariant = VARIANT
+#elif __CABAL__
+buildVariant = "cabalized"
 #else
-buildVariant = "interpreted"
+buildVariant = "unknown"
 #endif
 
 compiler :: String
@@ -74,3 +83,10 @@ buildDate  = __DATE__
 
 buildTime :: String
 buildTime  = __TIME__ ++ " " ++ __DATE__
+
+getDataPath :: IO String
+#if defined(__CABAL__)
+getDataPath = P.getDataFileName ""
+#else
+getDataPath = return "."
+#endif
