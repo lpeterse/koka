@@ -6,7 +6,7 @@
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
 
-module Common.System      ( getEnvPaths, getEnvVar
+module Common.System      ( getEnvVar
                           , searchPaths, searchPathsEx
 
                           , FileTime, fileTime0, maxFileTimes
@@ -104,13 +104,6 @@ searchPathsEx path exts name
 
     nname 
       = joinPaths $ dropWhile (==".") $ splitDirectories name
-
-getEnvPaths :: String -> IO [FilePath]
-getEnvPaths name
-  = do{ xs <- getEnvVar name
-      ; return (splitSearchPath xs)
-      }
-  `catchIO` \err -> return []
 
 getEnvVar :: String -> IO String
 getEnvVar name

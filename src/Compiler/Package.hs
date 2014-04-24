@@ -122,7 +122,8 @@ discoverPackages root
        return pkgs  
   where
     walk [] n acc
-      = do eroots  <- getEnvPaths node_path
+      = do var  <- getEnvVar node_path
+           let eroots = splitSearchPath var
            homedir <- getHomeDirectory
            let hroots = map (joinPath homedir) [".node_modules",".node_libraries"]
                -- bug: we do not search in $prefix/lib/node since it is deprecated
