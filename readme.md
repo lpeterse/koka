@@ -27,6 +27,7 @@ Starting out
 ------------
 
 After running `jake`, the Koka interpreter will start:
+
     __          _
     | |        | |
     | | __ ___ | | __ __ _
