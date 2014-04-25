@@ -18,6 +18,26 @@ category:            Compiler
 build-type:          Simple
 extra-source-files:  readme.md
 cabal-version:       >=1.10
+data-dir:            lib
+data-files:          *.kk,
+                     std/*.kk,
+                     std/*.js,
+                     std/*.cs,
+                     sys/*.kk,
+                     sys/node/*.kk,
+                     sys/dom/*.kk,
+                     sys/dom/css/*.kk,
+                     sys/dom/eventsource/*.kk,
+                     sys/dom/file/*.kk,
+                     sys/dom/html/*.kk,
+                     sys/dom/ranges/*.kk,
+                     sys/dom/stylesheets/*.kk,
+                     sys/dom/traversal/*.kk,
+                     sys/dom/typedarray/*.kk,
+                     sys/dom/views/*.kk,
+                     demo/*.kk,
+                     demo/node/*.kk,
+                     demo/dom/*.kk
 
 executable koka
   main-is:             Main.hs
@@ -47,3 +67,4 @@ executable koka
 source-repository head
     type: git
     location: git://github.com/lpeterse/koka.git
+

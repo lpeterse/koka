@@ -24,7 +24,7 @@ import Data.Char              ( toUpper )
 import Data.List              ( intersperse )
 import System.Environment     ( getArgs )
 import Platform.GetOptions        
-import Platform.Config        ( version, compiler, buildTime, buildVariant, exeExtension, programName )
+import Platform.Config        ( version, compiler, buildTime, buildVariant, exeExtension, programName, getDataPath )
 import Lib.PPrint
 import Lib.Printer
 import Common.Failure         ( raiseIO )
@@ -321,9 +321,13 @@ environment
 --------------------------------------------------------------------------}  
 getOptions :: String -> IO (Flags,Mode)
 getOptions extra
-  = do env  <- getEnvOptions
-       args <- getArgs
-       processOptions flagsNull (env ++ words extra ++ args) 
+  = do env   <- getEnvOptions
+       args  <- getArgs
+       -- try to find the data file install dir and use it as first include path
+       flags <- getDataPath >>= \mdp-> return $ case mdp of
+         Nothing -> flagsNull
+         Just dp -> flagsNull { includePath = dp:(includePath flagsNull) }
+       processOptions flags (env ++ words extra ++ args)
 
 processOptions :: Flags -> [String] -> IO (Flags,Mode)
 processOptions flags0 opts

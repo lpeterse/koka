@@ -84,9 +84,12 @@ buildDate  = __DATE__
 buildTime :: String
 buildTime  = __TIME__ ++ " " ++ __DATE__
 
-getDataPath :: IO String
+-- | Returns the path of installed data files
+-- i.e.  /home/user/.cabal/share/x86_64-linux-ghc-7.6.3/koka-0.5.0.0/
+getDataPath :: IO (Maybe String)
 #if defined(__CABAL__)
-getDataPath = P.getDataFileName ""
+getDataPath = do p <- P.getDataFileName ""
+                 return $ Just p
 #else
-getDataPath = return "."
+getDataPath = return Nothing
 #endif
