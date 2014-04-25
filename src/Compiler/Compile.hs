@@ -830,13 +830,6 @@ codeGenJS term flags modules compileTarget outBase core
                               ]  
             termPhase term ("generate index html: " ++ outHtml)
             writeDoc outHtml contentHtml  
-            -- try to ensure require.js is there
-            -- TODO: we should search along the node_modules search path
-            mbReq <- searchPackages (packages flags) (outDir flags) "requirejs" "require.js"
-            case mbReq of
-              Just reqPath -> copyTextIfNewer (rebuild flags) reqPath (outName flags "require.js")
-              Nothing      -> trace "could not find requirejs" $ return () -- TODO: warning?
-            
             case host flags of
               Browser ->
                do return (Just (system (outHtml ++ " &") >> return ()))

@@ -874,11 +874,13 @@ function runTest(n,testMode,testFile,flags,callback) {
 }
 
 function runTestFile(n,testFile,testMode,flags,callback) {
+  testModule = testFile.slice("test/".length);
   var testDir = path.dirname(testFile);
   var flags = flags || "";
   fs.readFile(path.join(testDir,".flags"), { encoding: "utf8" }, function(err,content) {
     if (!err) flags += " " + content.trim().replace("\n"," ");
-    var cmd = [mainExe,hsRunFlags,kokaFlags," -c --console=raw",flags,testFile].join(" ");
+    var cmd = [mainExe,hsRunFlags,kokaFlags," -c --console=raw",flags,testModule].join(" ");
+    jake.logger.log(cmd);
     jake.logger.log(n + ": " + testFile);
     if (testMode==="verbose") jake.logger.log("> " + cmd);
     child.exec(cmd, function (error, stdout, stderr) {
