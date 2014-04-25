@@ -12,6 +12,8 @@
 -----------------------------------------------------------------------------
 module Platform.Config where
 
+import System.Directory ( getAppUserDataDirectory )
+
 #if defined(__CABAL__)
 import Data.Version
 import qualified Paths_koka as P
@@ -86,10 +88,14 @@ buildTime  = __TIME__ ++ " " ++ __DATE__
 
 -- | Returns the path of installed data files
 -- i.e.  /home/user/.cabal/share/x86_64-linux-ghc-7.6.3/koka-0.5.0.0/
-getDataPath :: IO (Maybe String)
+getInstallDirectory :: IO (Maybe String)
 #if defined(__CABAL__)
-getDataPath = do p <- P.getDataFileName ""
-                 return $ Just p
+getInstallDirectory = do p <- P.getDataFileName ""
+                         return $ Just p
 #else
-getDataPath = return Nothing
+getInstallDirectory = return Nothing
 #endif
+
+getDataDirectory :: IO String
+getDataDirectory
+  = getAppUserDataDirectory programName

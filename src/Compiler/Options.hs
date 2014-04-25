@@ -24,7 +24,7 @@ import Data.Char              ( toUpper )
 import Data.List              ( intersperse )
 import System.Environment     ( getArgs )
 import Platform.GetOptions        
-import Platform.Config        ( version, compiler, buildTime, buildVariant, exeExtension, programName, getDataPath )
+import Platform.Config        ( version, compiler, buildTime, buildVariant, exeExtension, programName, getInstallDirectory, getDataDirectory )
 import Lib.PPrint
 import Lib.Printer
 import Common.Failure         ( raiseIO )
@@ -116,9 +116,18 @@ data Flags
          , packages         :: Packages
          }
 
-flagsNull :: Flags
+flagsNull :: IO Flags
 flagsNull
-  = Flags -- warnings
+  = do -- try to find the data file install dir and use it as first include path
+       includePath <- getInstallDirectory >>= \md-> return $ case md of
+         Nothing -> []
+         Just d -> [d]
+
+       -- a user specific path for storing application data
+       outDir <- getDataDirectory
+       createDirectoryIfMissing True outDir
+
+       return $ Flags -- warnings
           True
           -- show
           False False  -- kinds kindsigs
@@ -132,8 +141,8 @@ flagsNull
           Node
           False -- noSimplify
           defaultColorScheme
-          "."    -- out-dir
-          []
+          outDir
+          includePath
           "csc"
           "node"
           ""
@@ -323,10 +332,7 @@ getOptions :: String -> IO (Flags,Mode)
 getOptions extra
   = do env   <- getEnvOptions
        args  <- getArgs
-       -- try to find the data file install dir and use it as first include path
-       flags <- getDataPath >>= \mdp-> return $ case mdp of
-         Nothing -> flagsNull
-         Just dp -> flagsNull { includePath = dp:(includePath flagsNull) }
+       flags <- flagsNull
        processOptions flags (env ++ words extra ++ args)
 
 processOptions :: Flags -> [String] -> IO (Flags,Mode)

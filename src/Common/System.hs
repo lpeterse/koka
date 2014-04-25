@@ -8,6 +8,7 @@
 
 module Common.System      ( getEnvVar
                           , searchPaths, searchPathsEx
+                          , createDirectoryIfMissing
 
                           , FileTime, fileTime0, maxFileTimes
                           , fileTimeCompare, getFileTime
