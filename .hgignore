@@ -1,5 +1,7 @@
+src/Syntax/Lexer.hs
 # generated output
 ^node_modules/*
 ^out/*
+^dist/*
 .prof
 .kke

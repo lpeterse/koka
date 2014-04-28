@@ -130,7 +130,6 @@ executable koka
                        Syntax.Layout,
                        Syntax.Lexeme,
                        Syntax.Lexer,
-                       Syntax.LexerOld,
                        Syntax.Parse,
                        Syntax.Promote,
                        Syntax.RangeMap,
