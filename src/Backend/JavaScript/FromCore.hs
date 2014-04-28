@@ -524,9 +524,6 @@ genExpr expr
              App (TypeApp (Con name info) _) [arg]  | getName name == nameOptional
                -> genExpr arg
              App f args 
-                -- | isFunExpr f
-               -- -> 
-               --  | otherwise
                -> do (decls,fdoc:docs) <- genExprs (f:args) 
                      return (vcat decls, fdoc <> tupled docs <> debugComment "genExpr: App")
 
@@ -789,9 +786,12 @@ runAsm initEnv (Asm asm)
 data St  = St  { uniq     :: Int             
                }
 
-data Env = Env { moduleName        :: Name                    -- | current module
-               , prettyEnv         :: Pretty.Env              -- | for printing nice types
-               , substEnv          :: [(TName, Doc)]          -- | substituting names
+data Env = Env { -- | current module
+                 moduleName        :: Name
+                 -- | for printing nice types
+               , prettyEnv         :: Pretty.Env
+                 -- | substituting names
+               , substEnv          :: [(TName, Doc)]
                }
 
 data Result = ResultReturn (Maybe Name) [TName] -- first field carries function name if not anonymous and second the arguments which are always known

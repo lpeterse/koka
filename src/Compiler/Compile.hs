@@ -839,8 +839,6 @@ codeGenJS term flags modules compileTarget outBase core
   
 copyIFaceToOutputDir :: Terminal -> Flags -> FilePath -> PackageName -> [Module] -> IO ()
 copyIFaceToOutputDir term flags iface targetPath imported
-  -- | host flags == Node && target flags == JS = return ()
-  -- | otherwise  
   = do let outName = joinPaths [outDir flags, targetPath, takeFileName iface]
        copyTextIfNewer (rebuild flags) iface outName
        if (CS `elem` targets flags)
