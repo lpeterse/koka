@@ -17,10 +17,8 @@ import Control.Monad          ( when )
 
 import Lib.PPrint             ( Pretty(pretty), writePrettyLn )
 import Lib.Printer            ( writeLn, ColorPrinter, withColorPrinter, withFileNoColorPrinter, withNoColorPrinter, withHtmlColorPrinter )
-import Common.Failure         ( catchIO )
 import Common.Error           ( ErrorMessage(..), ppErrorMessage, checkError )
 import Common.Name            ( newName, nameNil )
-import Common.File            ( joinPath )
 import qualified Compiler.Options as Options
 import Compiler.Compile       ( compileFile, CompileTarget(..), Module(..), Loaded(..), Terminal(..) )
 import Interpreter.Interpret  ( interpret  )
@@ -35,10 +33,15 @@ main     :: IO ()
 main      = mainArgs ""
 
 -- | Alternative (interactive) entry points
+maing    :: IO ()
 maing     = mainArgs "-ilib -itest --verbose"
+maindoc  :: IO ()
 maindoc   = mainArgs "-ilib -itest --verbose --html"
+mainjs   :: IO ()
 mainjs    = mainArgs "-ilib -itest --verbose --target=js"
+maincs   :: IO ()
 maincs    = mainArgs "-ilib -itest --verbose --target=cs"
+mainh    :: IO ()
 mainh     = mainArgs "-ilib -itest --console=raw"
 
 -- | Parse options, dispatch terminal type, call compiler/interpreter.
@@ -91,51 +94,51 @@ compileAndPrintErrors p flags fname
                 fname
        case checkError err of
          Left msg
-           -> do putPrettyLn p $ ppErrorMessage (Options.showSpan flags) cscheme msg
+           -> do putPrettyLn $ ppErrorMessage (Options.showSpan flags) cscheme msg
                  exitFailure
          Right ( Loaded
                   gamma
                   kgamma
                   synonyms
-                  newtypes
-                  constructors
+                  _newtypes
+                  _constructors
                   _
                   imports
                   _
-                  ( Module modName _ _ _ _ _ rawProgram core _ modTime )
+                  ( Module modName' _ _ _ _ _ _rawProgram _core _ _modTime )
                   _
                , warnings )
            -> do when (not $ null warnings)
-                   $ putPrettyLn p
+                   $ putPrettyLn
                    $ ppErrorMessage (Options.showSpan flags) cscheme
                    $ ErrorWarning warnings ErrorZero
 
                  when (Options.showKindSigs flags)
-                   $ do putPrettyLn p $ pretty $ kgammaFilter modName kgamma
-                        let localSyns = synonymsFilter modName synonyms
+                   $ do putPrettyLn $ pretty $ kgammaFilter modName' kgamma
+                        let localSyns = synonymsFilter modName' synonyms
                         when (not $ synonymsIsEmpty localSyns)
-                          $ putPrettyLn p
-                          $ ppSynonyms (prettyEnv flags modName imports) localSyns
+                          $ putPrettyLn
+                          $ ppSynonyms (prettyEnv modName' imports) localSyns
 
                  when (Options.showTypeSigs flags)
-                   $ putPrettyLn p
-                   $ ppGamma (prettyEnv flags modName imports)
-                   $ gammaFilter modName gamma
+                   $ putPrettyLn
+                   $ ppGamma (prettyEnv modName' imports)
+                   $ gammaFilter modName' gamma
   where
     term
-      = Terminal (putErrorMessage p (Options.showSpan flags) cscheme) 
+      = Terminal (putErrorMessage (Options.showSpan flags)) 
                  (if (Options.verbose flags > 1) then putStrLn else (\_ -> return ()))  
                  (if (Options.verbose flags > 0) then writePrettyLn p else (\_ -> return ()))
-                 (putScheme p (prettyEnv flags nameNil importsEmpty)) 
+                 (putScheme $ prettyEnv nameNil importsEmpty) 
                  (writePrettyLn p)
     cscheme
       = Options.colorSchemeFromFlags flags
-    prettyEnv flags ctx imports
+    prettyEnv ctx imports
       = (Options.prettyEnvFromFlags flags){ context = ctx, importsMap = imports }
-    putScheme p env tp
-      = putPrettyLn p (ppScheme env tp)
-    putErrorMessage p endToo cscheme err
-      = putPrettyLn p (ppErrorMessage endToo cscheme err)
-    putPrettyLn p doc
+    putScheme env tp
+      = putPrettyLn (ppScheme env tp)
+    putErrorMessage endToo err
+      = putPrettyLn (ppErrorMessage endToo cscheme err)
+    putPrettyLn doc
       = do writePrettyLn p doc
            writeLn p ""
