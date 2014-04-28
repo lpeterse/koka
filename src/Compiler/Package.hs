@@ -58,7 +58,7 @@ pkgName pkg
 -- search packages
 ----------------------------------------------------------------
 
--- | Return package names: ("A/B/C", "lib")  (or ("","") for a non package)
+-- | Return package names: ('A/B/C', 'lib')  (or ('','') for a non package)
 packageInfoFromDir :: Packages -> FilePath -> (FilePath,FilePath)
 packageInfoFromDir pkgs dir
   = case packageFromDir pkgs dir of

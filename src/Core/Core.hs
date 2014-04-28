@@ -33,9 +33,8 @@ module Core.Core ( -- Data structures
                    , addNonRec, addCoreDef, coreNull
                    , freshName                   
                    , typeOf
-                   , HasExpVar, fv, bv
+                   , HasExpVar(..)
                    , isExprTrue,  exprTrue
-
                    , isExprFalse, exprFalse
                    , Visibility(..), Fixity(..), Assoc(..)
                    , coreName
