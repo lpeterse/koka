@@ -101,3 +101,6 @@ For development we recommend:
   * The excellent [SublimeText](http://www.sublimetext.com) text editor. There is a full Koka and Haskell
     language mode for SublimeText (run `jake sublime` to install the Koka mode on your system).
 
+To generate a browsable haddock documentation run:
+
+    cabal haddock --executable --hyperlink-source
