@@ -47,7 +47,6 @@ executable koka
   hs-source-dirs:      src
   build-tools:         alex
   default-language:    Haskell98
-  other-extensions:    CPP
   cpp-options:         -DCLI=CLI_HASKELINE
                        -D__CABAL__
   build-depends:       base >=4.6 && <4.7,
