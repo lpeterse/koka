@@ -9,7 +9,9 @@
 -}
 -----------------------------------------------------------------------------
 
-module Core.Check (check) where
+module Core.Check () where
+
+{-
 
 import Control.Monad
 import Lib.Trace
@@ -235,3 +237,5 @@ splitKForall _ = failure "Core.Check.splitKForall: Expected kforall"
 splitTForall :: Type -> Exception (TypeVar, Type)
 splitTForall (TForall t tp) = return (t, tp)
 splitTForall _ = throw $ "Expected forall"
+
+-}
