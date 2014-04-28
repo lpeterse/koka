@@ -38,10 +38,15 @@ data-files:          *.kk,
                      demo/*.kk,
                      demo/node/*.kk,
                      demo/dom/*.kk
+source-repository head
+    type: git
+    location: git://github.com/lpeterse/koka.git
 
 executable koka
   main-is:             Main.hs
-  -- other-modules:       
+  hs-source-dirs:      src
+  build-tools:         alex
+  default-language:    Haskell2010
   other-extensions:    CPP
   cpp-options:         -DCLI=CLI_HASKELINE
                        -D__CABAL__
@@ -60,11 +65,84 @@ executable koka
                        transformers >=0.3 && <0.4,
                        array >=0.4 && <0.5,
                        haskeline
-  hs-source-dirs:      src
-  build-tools:         alex
-  default-language:    Haskell2010
-
-source-repository head
-    type: git
-    location: git://github.com/lpeterse/koka.git
-
+  other-modules:       Backend.CSharp.FromCore,
+                       Backend.JavaScript.FromCore,
+                       Common.ColorScheme,
+                       Common.Error,
+                       Common.Failure,
+                       Common.File,
+                       Common.Id,
+                       Common.IdMap,
+                       Common.IdNice,
+                       Common.IdSet,
+                       Common.IOErr,
+                       Common.Message,
+                       Common.Name,
+                       Common.NameMap,
+                       Common.NamePrim,
+                       Common.NameSet,
+                       Common.QNameMap,
+                       Common.Range,
+                       Common.Syntax,
+                       Common.System,
+                       Common.Unique,
+                       Compiler.Compile,
+                       Compiler.Module,
+                       Compiler.Options,
+                       Compiler.Package,
+                       Core.AnalysisMatch,
+                       Core.BindingGroups,
+                       Core.Check,
+                       Core.Core,
+                       Core.Divergent,
+                       Core.GenDoc,
+                       Core.Parse,
+                       Core.Pretty,
+                       Core.Simplify,
+                       Core.Uniquefy,
+                       Interpreter.Command,
+                       Interpreter.Interpret,
+                       Kind.Assumption,
+                       Kind.Constructors,
+                       Kind.ImportMap,
+                       Kind.Infer,
+                       Kind.InferKind,
+                       Kind.InferMonad,
+                       Kind.Kind,
+                       Kind.Newtypes,
+                       Kind.Pretty,
+                       Kind.Synonym,
+                       Kind.Unify,
+                       Lib.JSON,
+                       Lib.PPrint,
+                       Lib.Printer,
+                       Lib.Scc,
+                       Lib.Trace,
+                       Platform.Config,
+                       Platform.Console,
+                       Platform.Filetime,
+                       Platform.GetOptions,
+                       Platform.ReadLine,
+                       Platform.Runtime,
+                       Static.BindingGroups,
+                       Static.FixityResolve,
+                       Syntax.Colorize,
+                       Syntax.Highlight,
+                       Syntax.Layout,
+                       Syntax.Lexeme,
+                       Syntax.Lexer,
+                       Syntax.LexerOld,
+                       Syntax.Parse,
+                       Syntax.Promote,
+                       Syntax.RangeMap,
+                       Syntax.Syntax,
+                       Type.Assumption,
+                       Type.Infer,
+                       Type.InferMonad,
+                       Type.InfGamma,
+                       Type.Kind,
+                       Type.Operations,
+                       Type.Pretty,
+                       Type.Type,
+                       Type.TypeVar,
+                       Type.Unify
