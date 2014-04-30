@@ -69,8 +69,17 @@ executable koka
   build-tools:       alex
   default-language:  Haskell98
   ghc-options:       -Wall
-  cpp-options:       -DCLI=CLI_HASKELINE
+  if os(windows)
+    cpp-options:     -DCLI=CLI_HASKELINE
                      -D__CABAL__
+                     -D__WIN32__
+    include-dirs:     src_c
+    install-includes: cconsole.h
+    c-sources:        src_c/cconsole.c
+  else
+    cpp-options:     -DCLI=CLI_HASKELINE
+                     -D__CABAL__
+
   build-depends:     base >=4.6 && <4.7,
                      containers >=0.5 && <0.6,
                      parsec >=3.1 && <3.2,

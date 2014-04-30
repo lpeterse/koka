@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface #-}
 -- for ghc older than 7.0: {-# OPTIONS -fglasgow-exts -#include "cconsole.h" #-}
 ------------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
