@@ -414,7 +414,7 @@ showHelp flags p
 showEnv :: Printer p => Flags -> p -> IO ()
 showEnv flags p
   = do doc <- environmentInfo (colorSchemeFromFlags flags)
-       writePrettyLn p (showIncludeInfo flags <$> doc)
+       writePrettyLn p (showIncludeInfo flags <$> showOutputInfo flags <$> doc)
 
 
 commandLineHelp :: Flags -> IO Doc
@@ -433,6 +433,7 @@ commandLineHelp flags
         , text "  The html bases are comma separated <base>=<url> pairs where the base"
         , text "   is a prefix of module names. If using just a <url> it matches any module."
         , showIncludeInfo flags
+        , showOutputInfo flags
         , envInfo
         , empty
         ]
@@ -453,6 +454,15 @@ showIncludeInfo flags
       = colorSchemeFromFlags flags
 
     infotext s 
+      = color (colorInterpreter colors) (text s)
+
+showOutputInfo flags
+  = hang 2 (infotext "output directory:" <$> text (outDir flags)) -- text (if null paths then "<empty>" else paths))
+  where
+    colors
+      = colorSchemeFromFlags flags
+
+    infotext s
       = color (colorInterpreter colors) (text s)
 
 environmentInfo colors 
