@@ -31,21 +31,22 @@ type Id     = Int
 
 -- | Show quotes around the id
 showId :: Id -> String
-showId id
-  = "\"" ++ show id ++ "\""
+showId i
+  = "\"" ++ show i ++ "\""
 
 -- | Generate an 'Id' with a certain base name (which is ignored :-)
 genId :: String -> Int -> Id
-genId baseName i
+genId _baseName i
   = newId i
 
 -- | Create a fresh identifier
 newId :: Int -> Id
-newId i = i
+newId i 
+  = i
 
 newIdFromId :: Id -> Id
-newIdFromId id
-  = id+1
+newIdFromId i
+  = i + 1
 
 -- | Dummy identifier
 idNil :: Id
