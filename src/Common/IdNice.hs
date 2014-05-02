@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Make "nice" names
+
+{- |
+  Make "nice" names.
 -}
------------------------------------------------------------------------------
+
 module Common.IdNice
           ( Nice, niceEmpty, niceExtend, niceShow, nicePretty
           ) where

@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Finite maps from names to ...
+
+{- |
+  Finite maps from 'Common.Name.Name's to ...
 -}
------------------------------------------------------------------------------
+
 module Common.QNameMap
           ( QNameMap, Lookup(..)
           , empty

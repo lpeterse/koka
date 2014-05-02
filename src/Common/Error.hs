@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Internal error monad.
+
+{- |
+  Internal error monad.
 -}
------------------------------------------------------------------------------
+
 module Common.Error( Error, ErrorMessage(..), errorMsg, ok
                    , catchError, checkError, warningMsg, addWarnings
                    , ppErrorMessage, errorWarning ) where

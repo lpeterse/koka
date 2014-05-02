@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Common syntactical constructs (for Syntax.Syntax and Core.Core)
+
+{- |
+  Common syntactical constructs (for "Syntax.Syntax" and "Core.Core").
 -}
------------------------------------------------------------------------------
+
 module Common.Syntax( Visibility(..)
                     , Assoc(..)
                     , Fixity(..)

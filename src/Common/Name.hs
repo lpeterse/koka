@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 -----------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
 --
@@ -6,7 +7,10 @@
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
 
-{-# OPTIONS_GHC -funbox-strict-fields #-}
+{- |
+  Name representation and manipulation.
+-}
+
 module Common.Name
           ( Name            -- instance Eq Ord Show
           , showName        -- show with quotes

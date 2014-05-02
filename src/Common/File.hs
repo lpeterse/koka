@@ -6,6 +6,10 @@
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
 
+{- |
+  File path manipulation (wraps System.FilePath).
+-}
+
 module Common.File( 
                   -- * File names
                     takeBaseName
@@ -23,10 +27,6 @@ module Common.File(
                   ) where
 
 import qualified System.FilePath as FilePath
-
-{--------------------------------------------------------------------------
-  File paths
---------------------------------------------------------------------------}
 
 -- | Remove the extension and directory part
 takeBaseName :: FilePath -> FilePath

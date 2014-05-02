@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 -----------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
 --
@@ -5,11 +6,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Source ranges and positions.
+
+{- |
+  Source ranges and positions.
 -}
------------------------------------------------------------------------------
-{-# OPTIONS_GHC -funbox-strict-fields #-}
+
 module Common.Range
           ( Pos, makePos, minPos, maxPos, posColumn, posLine
           , posMove8, posMoves8, posNull

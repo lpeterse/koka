@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Pretty print helpers for messages.
+
+{- |
+  Pretty print helpers for messages.
 -}
------------------------------------------------------------------------------
+
 module Common.Message(
                      -- * Pretty print helpers
                        table, tablex, ppRange

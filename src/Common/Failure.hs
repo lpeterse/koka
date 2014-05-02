@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Internal errors and assertions.
+
+{- |
+  Internal errors and assertions.
 -}
------------------------------------------------------------------------------
+
 module Common.Failure( failure, assertion, todo, matchFailure
                      , raise, raiseIO, catchIO
                      ) where

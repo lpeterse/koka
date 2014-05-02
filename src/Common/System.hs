@@ -6,6 +6,10 @@
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
 
+{- |
+  Interaction with the operating system (FileIO, environment variables etc.).
+-}
+
 module Common.System      ( getEnvVar
                           , searchPaths, searchPathsEx
                           , createDirectoryIfMissing

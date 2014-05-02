@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Useful monad classes.
+
+{- |
+  A monad for handling unique 'Common.Name.Name's.
 -}
------------------------------------------------------------------------------
+
 module Common.Unique( -- * Unique
                      HasUnique(updateUnique,setUnique,unique,uniques,uniqueId,uniqueIds,uniqueName)
                    -- ** Instances

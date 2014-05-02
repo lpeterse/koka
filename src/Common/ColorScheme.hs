@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Global color scheme used for pretty printing
+
+{- |
+  Global color scheme used for pretty printing.
 -}
------------------------------------------------------------------------------
+
 module Common.ColorScheme( ColorScheme(..)
                          , Color(..)
                          , defaultColorScheme

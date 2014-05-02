@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Set of names.
+
+{- |
+  Set of 'Common.Name.Name's.
 -}
------------------------------------------------------------------------------
+
 module Common.NameSet
           ( NameSet, module Data.Set
           ) where

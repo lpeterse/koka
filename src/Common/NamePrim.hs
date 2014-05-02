@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Primitive names.
+
+{- |
+    Primitive 'Common.Name.Name's.
 -}
------------------------------------------------------------------------------
+
 module Common.NamePrim
           ( 
           -- * Interpreter

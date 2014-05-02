@@ -5,10 +5,11 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Internal identifiers (just 'Int's).
+
+{- |
+  Internal identifiers (just 'Int's).
 -}
------------------------------------------------------------------------------
+
 module Common.Id
           ( Id, Ids     -- instance Eq Ord Show
           , showId      -- show with quotes
