@@ -23,7 +23,6 @@ import Data.List          ( isPrefixOf )
 import Text.Parsec hiding (Error)
 
 import Common.ColorScheme
-import Common.Name        ( Name, newName )
 import Lib.PPrint         ( Doc, text,vcat,(<$>),hang,empty,fill,(<>),color)
 
 type Parser a = Parsec String () a
@@ -61,13 +60,15 @@ data ShowCommand
 {--------------------------------------------------------------------------
   Parse a command line into a command, raises an exception on failure.
 --------------------------------------------------------------------------}
--- | Parse a command line into a command, raises an exception on failure.
+
+-- | Parse a command line into a command, uses constructor 'Error' on failure.
 parseCommand :: String -> Command
 parseCommand input
   = case parse (wrap command) "" input of
       Left err  -> Error ("error in command: " ++ show err)
       Right cmd -> cmd
 
+-- | Dispatch between expressions and commands preceeded by a colon.
 command :: Parser Command
 command 
   =   do{ special ":"; cmdeval }
@@ -75,7 +76,8 @@ command
   <|> return None
   <?> "command"
 
-
+-- | Parse a command without the preceeding colon.
+cmdeval :: Parser Command
 cmdeval
   =   do{ symbol "l" <|> symbol "load"; fpaths <- filenames; return (Load fpaths) }
   <|> do{ symbol "r" <|> symbol "reload"; return Reload }
@@ -104,6 +106,7 @@ cmdeval
   <|> do{ symbol "w" <|> symbol "warranty" <|> symbol "version"; return (Show ShowVersion) }
   <?> "command"
 
+-- | The interpreter help.
 commandHelp :: ColorScheme -> Doc
 commandHelp colors
   = hang 2 (infotext "commands:" <$> vcat 
@@ -139,31 +142,24 @@ commandHelp colors
   where
     cmd c arg explain
       = fill 12 (text c) <> fill 14 (text arg) <> infotext explain
-    
     infotext s
       = color (colorInterpreter colors) (text s)
 
-
+-- | Parse definition commands. 
 expression :: Parser Command
 expression
   = do src <- expr
-       if (isPrefixOf "fun" src)
-         then return (Define src)
-        else if (isPrefixOf "val" src)
-         then return (Define src)
-        else if (isPrefixOf "type" src)
-         then return (TypeDef src)
-        else if (isPrefixOf "cotype" src)
-         then return (TypeDef src)
-        else if (isPrefixOf "rectype" src)
-         then return (TypeDef src)
-        else if (isPrefixOf "alias" src)
-         then return (TypeDef src)
-        else if (isPrefixOf "struct" src)
-         then return (TypeDef src)
-        else if (isPrefixOf "enum" src)
-         then return (TypeDef src)      
-         else return (Eval src)
+       return (f src)
+  where
+    f src | isPrefixOf "fun"     src = Define src
+          | isPrefixOf "val"     src = Define src
+          | isPrefixOf "type"    src = TypeDef src
+          | isPrefixOf "cotype"  src = TypeDef src
+          | isPrefixOf "rectype" src = TypeDef src
+          | isPrefixOf "alias"   src = TypeDef src
+          | isPrefixOf "struct"  src = TypeDef src
+          | isPrefixOf "enum"    src = TypeDef src
+          | otherwise                = Eval src
 
 expr :: Parser String
 expr
@@ -181,24 +177,6 @@ anything :: Parser String
 anything
   = lexeme (many1 (noneOf "\^Z"))
 
-identifier :: Parser Name
-identifier
-  = lexeme (
-    do c  <- lower <|> upper
-       cs <- idchars
-       return (newName (c:cs))
-    <?> "identifier")
-
-{-    
-nat :: Parser Int
-nat
-  = lexeme (
-    do{ ds <- many1 digit
-      ; return (foldl (\n d -> 10*n + digitToInt d) 0 ds)
-      })
-  <?> "number"
--}
-
 filenames :: Parser [String]
 filenames
   = many filename
@@ -206,90 +184,69 @@ filenames
 filename :: Parser String
 filename
   = lexeme (
-    do{ char '"'
+    do{ _ <- char '"'
       ; s <- many1 (noneOf "\"\n")
-      ; char '"'
+      ; _ <- char '"'
       ; return s
       }
     <|>
     do{ many1 (noneOf "\"\n \t")  }
     <?> "file name")
 
-
 {--------------------------------------------------------------------------
   Whitespace and lexemes
 --------------------------------------------------------------------------}    
+
 special :: String -> Parser ()
 special name
-  = lexeme (do{ string name; return () })
+  = lexeme (do{ _ <- string name; return () })
 
 symbol :: String -> Parser ()
 symbol name
-  = lexeme (try (do{ istring name; notFollowedBy alphaNum }))
+  = lexeme (try (do{ _ <- istring name; notFollowedBy alphaNum }))
 
+istring :: String -> Parser ()
 istring s
   = (mapM_ (\c -> satisfy (\d -> toLower d == toLower c)) s)
     <?> s
 
-
+lexeme :: Parser a -> Parser a
 lexeme p       
     = do{ x <- p; whiteSpace; return x  }
 
+wrap :: Parser a -> Parser a
 wrap p
   = do{ whiteSpace
       ; x <- p
       ; eof
       ; return x
       }
-  
---whiteSpace    
+
+whiteSpace :: Parser ()
 whiteSpace 
   = skipMany white
-  
+
+white :: Parser ()
 white
   = simpleSpace <|> {- oneLineComment <|> -} multiLineComment <?> ""
-      
-simpleSpace 
-  = skipMany1 (satisfy isSpace)    
-    
-oneLineComment :: Parser ()
-oneLineComment 
-  = do{ try (string "--")
-      ; skipMany (satisfy (/= '\n'))
-      ; return ()
-      }
 
-multiLineComment 
-  = do { try (string "{-")
+simpleSpace :: Parser ()
+simpleSpace
+  = skipMany1 (satisfy isSpace)
+
+multiLineComment :: Parser ()
+multiLineComment
+  = do { _ <- try (string "{-")
        ; inComment
        }
 
+inComment :: Parser ()
 inComment
-    =   do{ try (string "-}") ; return () }
+    =   do{ _ <- try (string "-}") ; return () }
     <|> do{ multiLineComment             ; inComment}
     <|> do{ skipMany1 (noneOf startEnd)  ; inComment}
-    <|> do{ oneOf startEnd               ; inComment}
+    <|> do{ _ <- oneOf startEnd               ; inComment}
     <?> "end of comment"  
     where
       startEnd   = "{-}"
 
-p << q
-  = do{ x <- p; q; return x }
-
--- Parsers from `Syntax.Lexer`
-
-idchars :: Parser String
-idchars
-  = do cs <- many idchar
-       return (concat cs)
-
-idchar :: Parser String
-idchar
-  = do c <- alphanum <|> oneOf "_"
-       return [c]
-  <|> 
-    try (do char '-'
-            c <- letter
-            return ['-',c])
-
-alphanum = letter <|> digit
