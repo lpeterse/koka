@@ -552,7 +552,7 @@ getCommand st
        mbInput <- readLineEx ansiPrompt (prompt st)
        let input = maybe ":quit" id mbInput
        -- messageInfoLn st ("cmd: " ++ show input)
-       let cmd   = readCommand input
+       let cmd   = parseCommand input
        return cmd
 
 

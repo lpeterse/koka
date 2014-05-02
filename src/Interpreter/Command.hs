@@ -14,7 +14,7 @@
 module Interpreter.Command
   ( Command(..)
   , ShowCommand(..)
-  , readCommand
+  , parseCommand
   , commandHelp
   ) where
 
@@ -57,26 +57,6 @@ data ShowCommand
               | ShowDefines
               | ShowHelp
               | ShowVersion
-
-{--------------------------------------------------------------------------
-  Read a command
---------------------------------------------------------------------------}
-readCommand :: String -> Command
-readCommand line
-  = parseCommand (edit [] line)
-
-
-{---------------------------------------------------------------
-  Edit the command line: remove backspaces
----------------------------------------------------------------}
-edit xs []
-  = reverse xs
-
-edit xs (c:cs)
-  = case c of
-      '\b'   | not (null xs) -> edit (tail xs) cs
-             | otherwise     -> edit xs cs
-      other  -> edit (c:xs) cs
 
 {--------------------------------------------------------------------------
   Parse a command line into a command, raises an exception on failure.
