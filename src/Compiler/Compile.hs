@@ -1,4 +1,6 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
+
 -- Copyright 2012 Microsoft Corporation.
 --
 -- This is free software; you can redistribute it and/or modify it under the
@@ -813,6 +815,7 @@ codeGenJS term flags modules compileTarget outBase core
        writeDoc outjs js 
        when (showAsmJavaScript flags) (termDoc term js)
 
+       -- TODO: this does not really belong into the compiler
        case mbEntry of
         Nothing -> return Nothing
         Just (name) ->
@@ -822,7 +825,7 @@ codeGenJS term flags modules compileTarget outBase core
                                 "<!DOCTYPE html>",
                                 "<html>",
                                 "  <head>",
-                                "    <script data-main='" ++ takeFileName (takeBaseName outjs) ++ "' src='require.js'></script>",
+                                "    <script data-main='" ++ takeFileName (takeBaseName outjs) ++ "' src='http://requirejs.org/docs/release/1.0.1/minified/require.js'></script>",
                                 "  </head>",
                                 "  <body>",
                                 "  </body>",
@@ -832,9 +835,17 @@ codeGenJS term flags modules compileTarget outBase core
             writeDoc outHtml contentHtml  
             case host flags of
               Browser ->
-               do return (Just (system (outHtml ++ " &") >> return ()))
+               do return (Just (system (browser ++ outHtml ++ " &") >> return ()))
               Node ->
-               do return (Just (system ("node " ++ outjs) >> return ())) 
+               do return (Just (system ("node " ++ outjs) >> return ()))
+  where
+    -- TODO: find a better, cross-platform solution
+    browser
+#ifdef __WIN32__
+     = ""
+#else
+     = "xdg-open "
+#endif
 
   
 copyIFaceToOutputDir :: Terminal -> Flags -> FilePath -> PackageName -> [Module] -> IO ()
