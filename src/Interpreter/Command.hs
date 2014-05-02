@@ -6,24 +6,25 @@
 -- terms of the Apache License, Version 2.0. A copy of the License can be
 -- found in the file "license.txt" at the root of this distribution.
 -----------------------------------------------------------------------------
-{-
-    Main module.
--}
------------------------------------------------------------------------------
-module Interpreter.Command
-              ( Command(..), ShowCommand(..)
-              , readCommand
-              , commandHelp
-              ) where
 
-import Data.Char         ( isSpace, toLower )
-import Data.List         ( isPrefixOf )
-import Lib.PPrint   ( Doc, text,vcat,(<$>),hang,empty,fill,(<>),color)
-import Common.ColorScheme
-import Common.Name  ( Name, newName )
--- import Syntax.Lexer ( idchars )
--- import Compiler.Options( Flags, colorSchemeFromFlags, showIncludeInfo)
+{- |
+  Command parsing and interpretation.
+-}
+
+module Interpreter.Command
+  ( Command(..)
+  , ShowCommand(..)
+  , readCommand
+  , commandHelp
+  ) where
+
+import Data.Char          ( isSpace, toLower )
+import Data.List          ( isPrefixOf )
 import Text.Parsec hiding (Error)
+
+import Common.ColorScheme
+import Common.Name        ( Name, newName )
+import Lib.PPrint         ( Doc, text,vcat,(<$>),hang,empty,fill,(<>),color)
 
 type Parser a = Parsec String () a
 
