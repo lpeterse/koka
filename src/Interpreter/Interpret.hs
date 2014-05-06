@@ -14,7 +14,6 @@ module Interpreter.Interpret
   ( interpret
   ) where
 
-import System.Random
 import System.Directory            ( getCurrentDirectory, setCurrentDirectory )
 import System.Cmd                  ( system )
 import System.Exit                 ( ExitCode(..) )
@@ -64,6 +63,7 @@ import Interpreter.Message    ( message
                               , messageInfoLn
                               , messageHeader
                               )
+import Interpreter.Quote      ( messageQuote )
 
 io :: MonadIO m => IO a -> m a
 io = liftIO
@@ -248,7 +248,7 @@ command st cmd
                        ; interpreterEx st
                        }
       
-      Quit        -> do{ io $ putQuote st
+      Quit        -> do{ io $ messageQuote st
                        }
 
       None        -> do{ interpreterEx st }
@@ -547,28 +547,3 @@ terminal st
              (messageScheme st)
              (messagePrettyLn st)
 
-{--------------------------------------------------------------------------
-  Quote
---------------------------------------------------------------------------}
-
-putQuote ::  State -> IO ()
-putQuote st
-  = do idx <- randomRIO (0,length quotes-1)
-       let (quote,author) = quotes!!idx
-       messageInfoLnLn st ("\n" ++ quote ++ "\n -- " ++ author)
-
-quotes :: [(String,String)]
-quotes
-  = [("The cause is hidden. The effect is visible to all.","Ovid (43 BC - 17 AD)") 
-    ,("I think of my body as a side effect of my mind.", "Carrie Fisher (1956)")
-    ,("Laughter is a tranquilizer with no side effects.", "Arnold H. Glasgow")
-    ,("To the extent this helps us in any sort of competition, that's great,\nbut that's actually a side effect. It's a happy side effect, nonetheless.", "Gary Flake")
-    ,("There are no side effects -- only effects.\nThose we thought of in advance, the ones we like, we call\nthe main, or intended, effects, and take credit for them.\nThe ones we didn't anticipate,the ones that came around\nand bit us in the rear -- those are the `side effects'", "John D. Sterman (2002)")
-    ,("Many people recognize that technology often comes\nwith unintended and undesirable side effects.","Leon Kass")
-    ,("Before the effect one believes in different causes than one does after the effect.","Friedrich Nietzsche")
-    ,("The cause ceasing, the effect ceases also.","Edward Coke")
-    ,("Logic can often be reversed, but the effect does not precede the cause.","Gregory Bateson")
-    -- ,("Most exciting ideas are not important.\nMost important ideas are not exciting.\nNot every problem has a solution.\nEvery solution has side effects.", "Daniel E. Geer Jr.")
-    -- ,("Every cause produces more than one effect.","Herbert Spencer")
-    -- ,("No action is without its side effects.","Barry Commoner")
-     ]

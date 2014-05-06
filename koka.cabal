@@ -133,6 +133,7 @@ executable koka
                      Interpreter.Command,
                      Interpreter.State,
                      Interpreter.Message,
+                     Interpreter.Quote,
                      Interpreter.Interpret,
                      Kind.Assumption,
                      Kind.Constructors,
