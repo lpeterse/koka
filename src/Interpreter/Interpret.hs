@@ -537,16 +537,17 @@ replace row col s fpath
              []           -> pre ++ (if add then " " ++ qfpath else "")
 
 {--------------------------------------------------------------------------
-  Messages
+  Misc
 --------------------------------------------------------------------------}
 
-
-
+-- | A terminal is a collection of pretty printing 'IO' actions.
 terminal :: State -> Terminal
 terminal st
-  = Terminal (messageErrorMsgLn st) 
-             (if (verbose (flags st) > 0) then (\s -> withColor (printer st) DarkGray (message st (s ++ "\n"))) else (\_ -> return ()))
-             (messagePrettyLn st)
-             (messageScheme st)
-             (messagePrettyLn st)
-
+  = Terminal
+      ( messageErrorMsgLn st )
+      ( if verbose (flags st) > 0
+          then (\s -> withColor (printer st) DarkGray (message st (s ++ "\n")))
+          else (\_ -> return ()))
+      ( messagePrettyLn st )
+      ( messageScheme st )
+      ( messagePrettyLn st )
