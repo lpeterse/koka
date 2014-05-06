@@ -445,67 +445,91 @@ isSourceNull source
   Interprete a show command
 ---------------------------------------------------------------}
 
-loadedDiff :: t -> (Loaded -> t1) -> State -> t1
-loadedDiff _diff get st
-  = get (loaded st)
-
-prettyEnv :: State -> Env
-prettyEnv st
-  = (prettyEnvFromFlags (flags st)){ context = loadedName (loaded st), importsMap = loadedImportMap (loaded st) } 
 
 showCommand ::  State -> ShowCommand -> IO ()
 showCommand st cmd
   = case cmd of
-      ShowHelp         -> do messagePrettyLn st (commandHelp (colorSchemeFromFlags (flags st)))
-                             showEnv (flags st) (printer st)
+      ShowHelp
+        -> do messagePrettyLn st $ commandHelp $ colorSchemeFromFlags $ flags st
+              showEnv (flags st) (printer st)
 
-      ShowVersion      -> do showVersion (printer st) 
-                             messageLn st ""
+      ShowVersion
+        -> do showVersion (printer st) 
+              messageLn st ""
 
-      ShowKindSigs     -> let kgamma = {- loadedDiff kgammaDiff -} loadedKGamma (loaded st)
-                          in if (kgammaIsEmpty kgamma)
-                           then messageRemark st "no kinds to show"
-                           else messagePrettyLnLn st (ppKGamma colors (loadedName (loaded st)) (loadedImportMap (loaded st)) kgamma)
+      ShowKindSigs
+        -> let kgamma = loadedKGamma (loaded st)
+           in  if kgammaIsEmpty kgamma
+                 then messageRemark st "no kinds to show"
+                 else messagePrettyLnLn
+                        st
+                        ( ppKGamma
+                            colors
+                            ( loadedName (loaded st) )
+                            ( loadedImportMap (loaded st) )
+                            kgamma
+                        )
 
-      ShowTypeSigs     -> let gamma = gammaFilter (modName (loadedModule (loaded st))) $ loadedGamma (loaded st)
-                          in if (gammaIsEmpty gamma) 
-                           then messageRemark st "no types to show"
-                           else messagePrettyLnLn st (ppGamma (prettyEnv st) gamma)
+      ShowTypeSigs
+        -> let gamma = gammaFilter (modName (loadedModule (loaded st)))
+                       $ loadedGamma (loaded st)
+           in  if gammaIsEmpty gamma
+                 then messageRemark st "no types to show"
+                 else messagePrettyLnLn st (ppGamma (prettyEnv st) gamma)
 
-      ShowSynonyms     -> let syns = loadedDiff synonymsDiff loadedSynonyms st
-                          in if (synonymsIsEmpty syns)
-                           then messageRemark st "no synonyms to show"
-                           else messagePrettyLnLn st 
-                                  (ppSynonyms (prettyEnv st) syns)
+      ShowSynonyms
+        -> let syns = loadedDiff synonymsDiff loadedSynonyms
+           in  if synonymsIsEmpty syns
+                 then messageRemark st "no synonyms to show"
+                 else messagePrettyLnLn st (ppSynonyms (prettyEnv st) syns)
 
-      ShowSource       -> do source <- lastSourceFull st
-                             if (isSourceNull source)
-                              then messageRemark st "no source code to show"
-                              else do syntaxColor source
-                                      messageLnLn st ""
-                                      -- messageLnLn st (sourceText (programSource (program st)))
+      ShowSource
+        -> do source <- lastSourceFull st
+              if isSourceNull source
+                then messageRemark st "no source code to show"
+                else do syntaxColor source
+                        messageLnLn st ""
+                     -- messageLnLn st (sourceText (programSource (program st)))
 
-      ShowDefines      -> if (null (defines st))
-                           then messageRemark st "no definitions to show"
-                           else syntaxColor (interactiveSource (stringToBString (unlines (concatMap snd (defines st)))))
-                                -- messagePrettyLn st (color (colorSource colors)
-                                --                     (vcat (concatMap (map string . snd) (defines st))))
-
+      ShowDefines
+        -> if null (defines st)
+             then messageRemark st "no definitions to show"
+             else do syntaxColor $ interactiveSource
+                                 $ stringToBString
+                                 $ unlines
+                                 $ concatMap snd
+                                 $ defines st
+                  -- messagePrettyLn st (color (colorSource colors)
+                  --         (vcat (concatMap (map string . snd) (defines st))))
 
   where
+    colors :: ColorScheme
     colors
       = colorSchemeFromFlags (flags st)
 
+    syntaxColor :: Source -> IO ()
     syntaxColor source
-      = do highlightPrint colors (sourceName source) 1 (sourceBString source) (printer st)
+      = highlightPrint colors (sourceName source) 1 (sourceBString source) (printer st)
 
     interactiveSource :: BString -> Source
     interactiveSource str
-      = Source (show (nameInteractiveModule)) str
+      = Source (show nameInteractiveModule) str
+
+    loadedDiff :: t -> (Loaded -> t1) -> t1
+    loadedDiff _diff get
+      = get (loaded st)
 
 {--------------------------------------------------------------------------
   Misc
 --------------------------------------------------------------------------}
+
+-- | See "Type.Pretty" for details.
+prettyEnv :: State -> Env
+prettyEnv st
+  = ( prettyEnvFromFlags (flags st) )
+      { context    = loadedName (loaded st)
+      , importsMap = loadedImportMap (loaded st)
+      }
 
 -- | A terminal is a collection of pretty printing 'IO' actions.
 terminal :: State -> Terminal
