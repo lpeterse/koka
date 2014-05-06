@@ -7,12 +7,12 @@
 -----------------------------------------------------------------------------
 
 {- |
-  Interpreter
+  Interactive command prompt.
 -}
 
 module Interpreter.Interpret( interpret ) where
 
-import System.Random              
+import System.Random
 import System.Directory            ( getCurrentDirectory, setCurrentDirectory )
 import System.Cmd                  ( system )
 import System.Exit                 ( ExitCode(..) )
@@ -52,18 +52,19 @@ import Interpreter.Command
 {---------------------------------------------------------------
   interpreter state
 ---------------------------------------------------------------}
-data State = State{  printer    :: ColorPrinter
+
+data State = State{  printer       :: ColorPrinter
                    -- system variables
-                   , flags      :: Flags
+                   , flags         :: Flags
                    , evalDisable   :: Bool
                    -- program state
-                   , loaded0       :: Loaded            -- load state just after :l command
-                   , loaded        :: Loaded            -- load state with interactive defs
-                   , defines       :: [(Name,[String])] -- interactive definitions
-                   , program       :: UserProgram       -- interactive definitions as a program
-                   , errorRange    :: Maybe Range       -- last error location
-                   , lastLoad      :: [FilePath]        -- last load command
-                   , loadedPrelude :: Loaded            -- load state after loading the prelude
+                   , loaded0       :: Loaded            -- ^ load state just after :l command
+                   , loaded        :: Loaded            -- ^ load state with interactive defs
+                   , defines       :: [(Name,[String])] -- ^ interactive definitions
+                   , program       :: UserProgram       -- ^ interactive definitions as a program
+                   , errorRange    :: Maybe Range       -- ^ last error location
+                   , lastLoad      :: [FilePath]        -- ^ last load command
+                   , loadedPrelude :: Loaded            -- ^ load state after loading the prelude
                    }
 
 
@@ -74,7 +75,12 @@ io = liftIO
   Main
 ---------------------------------------------------------------}
 
-interpret ::  ColorPrinter -> Flags -> [FilePath] -> IO ()
+-- | Loads the requested modules and goes into an evaluation loop prompting
+--   the user for input to be evaluated.
+interpret :: ColorPrinter   -- ^ supplies 'IO' actions for (coloured) output to stdout
+             -> Flags       -- ^ flags for example from the command line
+             -> [FilePath]  -- ^ files to load initially
+             -> IO ()       -- ^
 interpret printer' flags0 files'
   = runReadLineT
       $ do io $ messageHeader st
@@ -108,29 +114,26 @@ interpret printer' flags0 files'
           , loadedPrelude = initialLoaded
           }
 
-messageEvaluation :: State -> IO ()
-messageEvaluation st
-  = messageInfoLnLn st "evaluation is disabled"
+
 
 {---------------------------------------------------------------
   Interpreter loop
 ---------------------------------------------------------------}
 
-interpreter ::  State -> ReadLineT IO ()
+-- | Tail-recursively calls 'interpreterEx' and clears 'errorRange'
+interpreter :: State -> ReadLineT IO ()
 interpreter st
-  = interpreterEx st{ errorRange = Nothing }
+  = do interpreterEx st'
+  where
+    st' = st{ errorRange = Nothing }
 
-interpreterEx ::  State -> ReadLineT IO ()
+-- | Fetches a command and tail-recursively calls 'command' for evaluation
+interpreterEx :: State -> ReadLineT IO ()
 interpreterEx st
-  = do{ cmd <- getCommand st
-      -- ; messageLn ""
-      ; command st cmd
-      }
+  = do cmd <- getCommand st
+       command st cmd
 
-{---------------------------------------------------------------
-  Interprete a command
----------------------------------------------------------------}
-
+-- | Interpret a command and (if not quit) recurses to 'interpreter'
 command ::  State -> Command -> ReadLineT IO ()
 command st cmd
   = case cmd of
@@ -317,9 +320,9 @@ reset st
   =  st{ program       = programNull nameInteractiveModule
        , defines       = [] 
        , loaded        = loadedPrelude st -- initialLoaded 
-       -- , modules       = []
-       -- , loaded0       = loadedPrelude st -- initialLoaded 
-       , loaded0       = if (rebuild (flags st)) then initialLoaded else loaded0 st
+       , loaded0       = if rebuild (flags st)
+                           then initialLoaded
+                           else loaded0 st
        , errorRange    = Nothing
        }
 
@@ -528,6 +531,7 @@ replace row col s fpath
 {--------------------------------------------------------------------------
   Messages
 --------------------------------------------------------------------------}
+
 getCommand :: State -> ReadLineT IO Command
 getCommand st
   = do let ansiPrompt = (if isAnsiPrinter (printer st)
@@ -538,7 +542,6 @@ getCommand st
        -- messageInfoLn st ("cmd: " ++ show input)
        let cmd   = parseCommand input
        return cmd
-
 
 prompt ::  State -> IO ()
 prompt st
@@ -556,6 +559,10 @@ terminal st
              (messagePrettyLn st)  -- (\_ -> return ()) -- 
              (messageScheme st)
              (messagePrettyLn st)
+
+messageEvaluation :: State -> IO ()
+messageEvaluation st
+  = messageInfoLnLn st "evaluation is disabled"
 
 messageErrorMsgLn :: State -> ErrorMessage -> IO ()
 messageErrorMsgLn st err
