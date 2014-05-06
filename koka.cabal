@@ -131,6 +131,7 @@ executable koka
                      Core.Simplify,
                      Core.Uniquefy,
                      Interpreter.Command,
+                     Interpreter.State,
                      Interpreter.Interpret,
                      Kind.Assumption,
                      Kind.Constructors,

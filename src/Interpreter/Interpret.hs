@@ -29,7 +29,7 @@ import Lib.Printer
 import Common.Failure         ( raiseIO, catchIO )
 import Common.ColorScheme
 import Common.File            ( joinPath )
-import Common.Name            ( Name, unqualify, qualify, newName )
+import Common.Name            ( unqualify, qualify, newName )
 import Common.NamePrim        ( nameExpr, nameType, nameInteractive, nameInteractiveModule, nameSystemCore )
 import Common.Range
 import Common.Error
@@ -48,25 +48,7 @@ import Type.Assumption        ( gammaIsEmpty, ppGamma, infoType, gammaFilter )
 import Compiler.Options
 import Compiler.Compile
 import Interpreter.Command
-
-{---------------------------------------------------------------
-  interpreter state
----------------------------------------------------------------}
-
-data State = State{  printer       :: ColorPrinter
-                   -- system variables
-                   , flags         :: Flags
-                   , evalDisable   :: Bool
-                   -- program state
-                   , loaded0       :: Loaded            -- ^ load state just after :l command
-                   , loaded        :: Loaded            -- ^ load state with interactive defs
-                   , defines       :: [(Name,[String])] -- ^ interactive definitions
-                   , program       :: UserProgram       -- ^ interactive definitions as a program
-                   , errorRange    :: Maybe Range       -- ^ last error location
-                   , lastLoad      :: [FilePath]        -- ^ last load command
-                   , loadedPrelude :: Loaded            -- ^ load state after loading the prelude
-                   }
-
+import Interpreter.State      ( State(..), reset )
 
 io :: MonadIO m => IO a -> m a
 io = liftIO
@@ -314,17 +296,6 @@ loadFilesErr term startSt fileNames
                                ; walk (if (modName modl == nameSystemCore) then imports else (modl : imports)) newst fnames
                                }
                    }
-
-reset :: State -> State
-reset st
-  =  st{ program       = programNull nameInteractiveModule
-       , defines       = [] 
-       , loaded        = loadedPrelude st -- initialLoaded 
-       , loaded0       = if rebuild (flags st)
-                           then initialLoaded
-                           else loaded0 st
-       , errorRange    = Nothing
-       }
 
 errorFileNotFound :: Flags -> FilePath -> ErrorMessage 
 errorFileNotFound flgs name
