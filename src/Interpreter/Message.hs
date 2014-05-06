@@ -78,6 +78,10 @@ message ::  State -> String -> IO ()
 message st s
   = write (printer st) s
 
+messageRemark ::  State -> String -> IO ()
+messageRemark st s
+  = messageInfoLnLn st ("<" ++ s ++ ">")
+
 messageMarker ::  State -> Range -> IO ()
 messageMarker st rng
   = messagePrettyLn st makeMarker

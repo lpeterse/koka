@@ -59,6 +59,7 @@ import Interpreter.Message    ( message
                               , messageErrorMsgLnLn
                               , messagePrettyLnLn
                               , messageMarker
+                              , messageRemark
                               , messageEvaluation
                               , messageInfoLn
                               , messageHeader
@@ -190,7 +191,7 @@ command st cmd
       
       Edit []     -> do{ let fpath = lastFilePath st
                        ; if (null fpath)
-                          then do io $ remark st "nothing to edit"
+                          then do io $ messageRemark st "nothing to edit"
                                   interpreterEx st
                           else do io $ runEditor st fpath
                                   command st Reload 
@@ -255,6 +256,10 @@ command st cmd
   where
     term = terminal st
 
+    lineNo :: State -> Int
+    lineNo st'
+      = bigLine + (length (defines st') + 1)
+
 {--------------------------------------------------------------------------
   File loading
 --------------------------------------------------------------------------}
@@ -277,7 +282,7 @@ loadFilesErr term startSt fileNames
                       then do messageInfoLn st "modules:"
                               sequence_ [messageLn st ("  " ++ show (modName m) ) | m <- imports ]
 
-                      else return () -- remark st "nothing to load"                      
+                      else return () -- messageRemark st "nothing to load"
                     messageLn st ""
                     let st' = st{ program = programAddImports (program st) (map toImport imports) }
                         toImport mod'
@@ -352,13 +357,13 @@ checkInferWith st _getLoaded showMarker err f
 
 maybeMessageMarker ::  State -> Range -> IO ()
 maybeMessageMarker st rng
-  = if (lineNo st == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
+  = if (lineNo == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
      then messageMarker st rng
      else return ()
-
-lineNo :: State -> Int
-lineNo st
-  = bigLine + (length (defines st) + 1)
+  where
+    lineNo :: Int
+    lineNo
+      = bigLine + (length (defines st) + 1)
 
 dropLet :: [Char] -> [Char]
 dropLet s
@@ -442,29 +447,29 @@ showCommand st cmd
 
       ShowKindSigs     -> let kgamma = {- loadedDiff kgammaDiff -} loadedKGamma (loaded st)
                           in if (kgammaIsEmpty kgamma)
-                           then remark st "no kinds to show"
+                           then messageRemark st "no kinds to show"
                            else messagePrettyLnLn st (ppKGamma colors (loadedName (loaded st)) (loadedImportMap (loaded st)) kgamma)
 
       ShowTypeSigs     -> let gamma = gammaFilter (modName (loadedModule (loaded st))) $ loadedGamma (loaded st)
                           in if (gammaIsEmpty gamma) 
-                           then remark st "no types to show"
+                           then messageRemark st "no types to show"
                            else messagePrettyLnLn st (ppGamma (prettyEnv st) gamma)
 
       ShowSynonyms     -> let syns = loadedDiff synonymsDiff loadedSynonyms st
                           in if (synonymsIsEmpty syns)
-                           then remark st "no synonyms to show"
+                           then messageRemark st "no synonyms to show"
                            else messagePrettyLnLn st 
                                   (ppSynonyms (prettyEnv st) syns)
 
       ShowSource       -> do source <- lastSourceFull st
                              if (isSourceNull source)
-                              then remark st "no source code to show"
+                              then messageRemark st "no source code to show"
                               else do syntaxColor source
                                       messageLnLn st ""
                                       -- messageLnLn st (sourceText (programSource (program st)))
 
       ShowDefines      -> if (null (defines st))
-                           then remark st "no definitions to show"
+                           then messageRemark st "no definitions to show"
                            else syntaxColor (interactiveSource (stringToBString (unlines (concatMap snd (defines st)))))
                                 -- messagePrettyLn st (color (colorSource colors)
                                 --                     (vcat (concatMap (map string . snd) (defines st))))
@@ -534,10 +539,6 @@ prompt ::  State -> IO ()
 prompt st
   = do messageInfo st "> "
        flush (printer st)
-
-remark ::  State -> String -> IO ()
-remark st s
-  = messageInfoLnLn st ("<" ++ s ++ ">")
 
 terminal :: State -> Terminal
 terminal st
