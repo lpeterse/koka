@@ -10,7 +10,7 @@
     Module that exports readline functionality
 -}
 -----------------------------------------------------------------------------
-module Platform.ReadLine( ReadLineT, runReadLineT, readLine, readLineEx
+module Platform.ReadLine( ReadLineT, runReadLineT, readLine
                         ) where
 
 #define CLI_HASKELINE 2
@@ -25,12 +25,9 @@ runReadLineT :: ReadLineT IO a -> IO a
 runReadLineT
   = runInputT defaultSettings
 
+-- | TODO: read multiple lines
 readLine     :: String -> ReadLineT IO (Maybe String)
 readLine prompt
-  = getInputLine prompt
-
-readLineEx   :: String -> a -> ReadLineT IO (Maybe String)
-readLineEx prompt putPrompt
   = getInputLine prompt
 
 #else
@@ -43,15 +40,14 @@ runReadLineT :: ReadLineT IO a -> IO a
 runReadLineT io
   = io
 
-readLine     :: String -> ReadLineT IO (Maybe String)
+readLine :: String -> ReadLineT IO (Maybe String)
 readLine prompt
-  = readLineEx prompt (do{ putStr prompt; hFlush stdout})
-
-readLineEx   :: String -> ReadLineT IO () -> ReadLineT IO (Maybe String)
-readLineEx prompt putPrompt
   = do s <- readLines
        return (Just s)
   where
+    putPrompt
+      = do putStr prompt
+           hFlush stdout
     readLines
       = do putPrompt
            line <- getLine

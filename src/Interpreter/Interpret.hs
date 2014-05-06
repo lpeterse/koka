@@ -22,7 +22,7 @@ import Data.Char                   ( isSpace )
 import Control.Monad
 import Control.Monad.IO.Class      ( MonadIO, liftIO )
 
-import Platform.ReadLine      ( ReadLineT, runReadLineT, readLineEx )
+import Platform.ReadLine      ( ReadLineT, runReadLineT, readLine )
 import Lib.PPrint
 import Lib.Printer
 import Common.Failure         ( raiseIO, catchIO )
@@ -51,7 +51,6 @@ import Interpreter.State      ( State(..), reset )
 import Interpreter.Message    ( message
                               , messageLn
                               , messageLnLn
-                              , messageInfo
                               , messageInfoLnLn
                               , messagePrettyLn
                               , messageError
@@ -112,11 +111,28 @@ interpret printer' flags0 files'
           , loadedPrelude = initialLoaded
           }
 
-
-
 {---------------------------------------------------------------
   Interpreter loop
 ---------------------------------------------------------------}
+
+-- | A thin wrapper around the 'readLine' call that specifies the prompt
+--   and a fallback command (:quit) in case 'readLine' returns 'Nothing'.
+getCommand :: State -> ReadLineT IO Command
+getCommand st
+  = parseCommand `fmap` maybe ":quit" id `fmap` readLine ansiPrompt
+  where
+    -- Since readLine requires a string instead of an IO action
+    -- we need to dispatch on the terminal type and assemble a string
+    -- containing an ansi escape sequence if this is an ansi terminal.
+    -- TODO: find a nicer solution. This is a layering violation.
+    ansiEscape :: String -> String
+    ansiEscape  = if isAnsiPrinter (printer st)
+                    then ansiWithColor $ colorInterpreter
+                                       $ colorSchemeFromFlags
+                                       $ flags st
+                    else id
+    ansiPrompt :: String
+    ansiPrompt  = ansiEscape "> "
 
 -- | Tail-recursively calls 'interpreterEx' and clears 'errorRange'
 interpreter :: State -> ReadLineT IO ()
@@ -524,27 +540,13 @@ replace row col s fpath
   Messages
 --------------------------------------------------------------------------}
 
-getCommand :: State -> ReadLineT IO Command
-getCommand st
-  = do let ansiPrompt = (if isAnsiPrinter (printer st)
-                          then ansiWithColor (colorInterpreter (colorSchemeFromFlags (flags st)))
-                          else id) "> "
-       mbInput <- readLineEx ansiPrompt (prompt st)
-       let input = maybe ":quit" id mbInput
-       -- messageInfoLn st ("cmd: " ++ show input)
-       let cmd   = parseCommand input
-       return cmd
 
-prompt ::  State -> IO ()
-prompt st
-  = do messageInfo st "> "
-       flush (printer st)
 
 terminal :: State -> Terminal
 terminal st
   = Terminal (messageErrorMsgLn st) 
              (if (verbose (flags st) > 0) then (\s -> withColor (printer st) DarkGray (message st (s ++ "\n"))) else (\_ -> return ()))
-             (messagePrettyLn st)  -- (\_ -> return ()) -- 
+             (messagePrettyLn st)
              (messageScheme st)
              (messagePrettyLn st)
 
