@@ -25,7 +25,7 @@ import Control.Monad.IO.Class      ( MonadIO, liftIO )
 import Platform.ReadLine      ( ReadLineT, runReadLineT, readLine )
 import Lib.PPrint
 import Lib.Printer
-import Common.Failure         ( raiseIO, catchIO )
+import Common.Failure         ( catchIO )
 import Common.ColorScheme
 import Common.File            ( joinPath )
 import Common.Name            ( unqualify, qualify, newName )
@@ -516,17 +516,17 @@ runEditor st fpath
 
 runEditorAt ::  State -> FilePath -> Int -> Int -> IO ()
 runEditorAt st fpath row col
-  = let cmd  = replace row col (editor (flags st)) fpath 
+  = let cmd  = replace $ editor (flags st)
     in if null (editor (flags st))
-        then raiseIO ("no editor specified. (use the \"koka-editor\" environment variable?)")
+        then messageError st ("no editor specified. (use the \"koka-editor\" environment variable?)")
         else do _ <- system cmd
                 return ()
-        
-replace :: Int -> Int -> FilePath -> String -> String
-replace row col s fpath
-  = walk True s
   where
-    qfpath  = fpath 
+    replace :: String -> String
+    replace s
+      = walk True s
+    qfpath
+      = fpath
     walk add xs
       = let (pre,post) = span (/='%') xs
         in case post of
