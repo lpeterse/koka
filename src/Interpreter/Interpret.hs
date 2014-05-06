@@ -10,7 +10,9 @@
   Interactive command prompt.
 -}
 
-module Interpreter.Interpret( interpret ) where
+module Interpreter.Interpret
+  ( interpret
+  ) where
 
 import System.Random
 import System.Directory            ( getCurrentDirectory, setCurrentDirectory )
@@ -21,8 +23,6 @@ import Data.Char                   ( isSpace )
 import Control.Monad
 import Control.Monad.IO.Class      ( MonadIO, liftIO )
 
-import Platform.Config hiding ( programName )
-import qualified Platform.Config as Config
 import Platform.ReadLine      ( ReadLineT, runReadLineT, readLineEx )
 import Lib.PPrint
 import Lib.Printer
@@ -49,6 +49,21 @@ import Compiler.Options
 import Compiler.Compile
 import Interpreter.Command
 import Interpreter.State      ( State(..), reset )
+import Interpreter.Message    ( message
+                              , messageLn
+                              , messageLnLn
+                              , messageInfo
+                              , messageInfoLnLn
+                              , messagePrettyLn
+                              , messageError
+                              , messageErrorMsgLn
+                              , messageErrorMsgLnLn
+                              , messagePrettyLnLn
+                              , messageMarker
+                              , messageEvaluation
+                              , messageInfoLn
+                              , messageHeader
+                              )
 
 io :: MonadIO m => IO a -> m a
 io = liftIO
@@ -314,6 +329,7 @@ docNotFound cscheme path name
 {--------------------------------------------------------------------------
   Helpers
 --------------------------------------------------------------------------}
+
 checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInfer st = checkInferWith st id
 
@@ -468,6 +484,7 @@ showCommand st cmd
 {--------------------------------------------------------------------------
   Run an editor
 --------------------------------------------------------------------------}
+
 runEditor ::  State -> FilePath -> IO ()
 runEditor st fpath
   = let (row,col) = case errorRange st of
@@ -497,7 +514,6 @@ replace row col s fpath
              ('%':'f':cs) -> pre ++ qfpath ++ walk False cs
              (c:cs)       -> pre ++ [c] ++ walk add cs
              []           -> pre ++ (if add then " " ++ qfpath else "")
-
 
 {--------------------------------------------------------------------------
   Messages
@@ -531,94 +547,9 @@ terminal st
              (messageScheme st)
              (messagePrettyLn st)
 
-messageEvaluation :: State -> IO ()
-messageEvaluation st
-  = messageInfoLnLn st "evaluation is disabled"
-
-messageErrorMsgLn :: State -> ErrorMessage -> IO ()
-messageErrorMsgLn st err
-  = messagePrettyLn st (ppErrorMessage (showSpan (flags st)) (colorSchemeFromFlags (flags st)) err)
-
-messageErrorMsgLnLn :: State -> ErrorMessage -> IO ()
-messageErrorMsgLnLn st err
-  = messagePrettyLnLn st (ppErrorMessage (showSpan (flags st)) (colorSchemeFromFlags (flags st)) err)
-
-messageError ::  State -> String -> IO ()
-messageError st msg
-  = messageInfoLnLn st msg
-
-messageInfoLnLn ::  State -> String -> IO ()
-messageInfoLnLn st s
-  = do messageInfoLn st s
-       messageLn st ""
-
-messageInfoLn ::  State -> String -> IO ()
-messageInfoLn st s
-  = do messageInfo st s
-       messageLn st ""     
-       
-messageInfo ::  State -> String -> IO ()
-messageInfo st s
-  = withColor (printer st) (colorInterpreter colors) (message st s)
-  where
-    colors
-      = colorSchemeFromFlags (flags st)
-
-messagePrettyLnLn ::  State -> Doc -> IO ()
-messagePrettyLnLn st d
-  = do messagePrettyLn st d
-       messageLn st ""
-
-messagePrettyLn ::  State -> Doc -> IO ()
-messagePrettyLn st d
-  = do messagePretty st d
-       messageLn st ""
-
-messagePretty ::  State -> Doc -> IO ()
-messagePretty st d
-  = writePretty (printer st) d
-
-messageLnLn ::  State -> String -> IO ()
-messageLnLn st s
-  = messageLn st (s ++ "\n")
-
-messageLn ::  State -> String -> IO ()
-messageLn st s
-  = writeLn (printer st) s
-
-message ::  State -> String -> IO ()
-message st s
-  = write (printer st) s
-
-messageMarker ::  State -> Range -> IO ()
-messageMarker st rng
-  = messagePrettyLn st makeMarker
-  where
-    colors
-      = colorSchemeFromFlags (flags st)
-
-    makeMarker
-      = let c1 = posColumn (rangeStart rng)
-        in color (colorMarker colors) (text (replicate (c1 + 1) ' ' ++ replicate 1 '^'))
-
 {--------------------------------------------------------------------------
-  Header
+  Quote
 --------------------------------------------------------------------------}
-
-messageHeader :: State -> IO ()
-messageHeader st
-  = messagePrettyLnLn st header
-  where
-    colors = colorSchemeFromFlags (flags st)
-    header = color(colorInterpreter colors) $ vcat [
-        text " _          _           "
-       ,text "| |        | |          "
-       ,text "| | __ ___ | | __ __ _  "
-       ,text $ "| |/ // _ \\| |/ // _` | welcome to the " ++ Config.programName ++ " interpreter"
-       ,text "|   <| (_) |   <| (_| | " <> headerVersion  
-       ,text "|_|\\_\\\\___/|_|\\_\\\\__,_| " <> color (colorSource colors) (text "type :? for help") 
-       ]
-    headerVersion = text $ "version " ++ version ++ (if buildVariant /= "release" then (" (" ++ buildVariant ++ ")") else "") ++ ", " ++ buildDate   
 
 putQuote ::  State -> IO ()
 putQuote st
