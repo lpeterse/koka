@@ -298,6 +298,24 @@ command st cmd
         ppPath p
           = color (colorSource cscheme) (text p)
 
+    -- | Only needed by the (Define ln) branch
+    dropLet :: String -> String
+    dropLet s
+      = if isPrefixOf "let" s 
+         then dropEndWhile (\c -> isSpace c || c == '}') (dropWhile (\c -> isSpace c || c == '{') (drop 3 s))
+         else s
+      where
+        dropEndWhile p 
+          = reverse . dropWhile p . reverse
+
+    -- | Only needed by the (Edit []) branch
+    lastFilePath :: State -> FilePath
+    lastFilePath st'
+       = let source = lastSource st'
+         in if (isSourceNull source)
+            then ""
+            else sourceName source
+
 {--------------------------------------------------------------------------
   Helpers
 --------------------------------------------------------------------------}
@@ -332,15 +350,6 @@ maybeMessageMarker st rng
     lineNo
       = bigLine + (length (defines st) + 1)
 
-dropLet :: [Char] -> [Char]
-dropLet s
-  = if isPrefixOf "let" s 
-     then dropEndWhile (\c -> isSpace c || c == '}') (dropWhile (\c -> isSpace c || c == '{') (drop 3 s))
-     else s
-  where
-    dropEndWhile p 
-      = reverse . dropWhile p . reverse
-
 lastSource :: State -> Source
 lastSource st
   = -- trace ("lastSource: " ++ show (map modSourcePath (loadedModules (loaded0 st))) ++ "," ++ modSourcePath (loadedModule (loaded0 st)) ++ ", " ++ show (errorRange st)) $
@@ -355,12 +364,7 @@ lastSource st
                     Nothing  -> fsource
     in source
 
-lastFilePath :: State -> [Char]
-lastFilePath st
-   = let source = lastSource st
-     in if (isSourceNull source)
-        then ""
-        else sourceName source
+
 
 lastSourceFull :: State -> IO Source
 lastSourceFull st
