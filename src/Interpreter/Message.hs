@@ -15,7 +15,10 @@ import Common.ColorScheme
 import Common.Range
 import Common.Error
 import Compiler.Options
+import Compiler.Module        ( loadedName, loadedImportMap )
 import qualified Platform.Config as Config
+import Type.Type              ( Scheme )
+import Type.Pretty            ( ppScheme, ppSchemeEffect, Env(context,importsMap))
 
 import Interpreter.State
 
@@ -107,3 +110,27 @@ messageHeader st
        ,text "|_|\\_\\\\___/|_|\\_\\\\__,_| " <> color (colorSource colors) (text "type :? for help") 
        ]
     headerVersion = text $ "version " ++ Config.version ++ (if Config.buildVariant /= "release" then (" (" ++ Config.buildVariant ++ ")") else "") ++ ", " ++ Config.buildDate
+
+messageScheme ::  State -> Scheme -> IO ()
+messageScheme st tp
+  = messagePrettyLnLn st (prettyScheme st tp)
+
+prettyScheme :: State -> Scheme -> Doc
+prettyScheme st tp
+  = ppScheme (prettyEnv st) tp
+
+messageSchemeEffect ::  State -> Scheme -> IO ()
+messageSchemeEffect st tp
+  = messagePrettyLnLn st (prettySchemeEffect st tp)
+
+prettySchemeEffect :: State -> Scheme -> Doc
+prettySchemeEffect st tp
+  = ppSchemeEffect (prettyEnv st) tp
+
+-- | See "Type.Pretty" for details.
+prettyEnv :: State -> Env
+prettyEnv st
+  = ( prettyEnvFromFlags (flags st) )
+      { context    = loadedName (loaded st)
+      , importsMap = loadedImportMap (loaded st)
+      }

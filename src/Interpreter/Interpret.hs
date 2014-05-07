@@ -39,8 +39,6 @@ import Syntax.Highlight       ( highlightPrint )
 import Kind.Synonym           ( synonymsIsEmpty,synonymsDiff, ppSynonyms )
 import Kind.Assumption        ( kgammaFind, kgammaIsEmpty, ppKGamma )
 import Kind.Pretty            ( prettyKind )
-import Type.Type              ( Scheme )
-import Type.Pretty            ( ppScheme, ppSchemeEffect, Env(context,importsMap))
 import Type.Assumption        ( gammaIsEmpty, ppGamma, infoType, gammaFilter )
 
 import Compiler.Options
@@ -62,6 +60,10 @@ import Interpreter.Message    ( message
                               , messageEvaluation
                               , messageInfoLn
                               , messageHeader
+                              , messageSchemeEffect
+                              , messageScheme
+                              , prettyScheme
+                              , prettyEnv
                               )
 import Interpreter.Quote      ( messageQuote )
 import Interpreter.Editor     ( runEditor )
@@ -339,22 +341,6 @@ dropLet s
     dropEndWhile p 
       = reverse . dropWhile p . reverse
 
-messageScheme ::  State -> Scheme -> IO ()
-messageScheme st tp
-  = do messagePrettyLnLn st (prettyScheme st tp)
-
-prettyScheme :: State -> Scheme -> Doc
-prettyScheme st tp
-  = ppScheme (prettyEnv st) tp
-
-messageSchemeEffect ::  State -> Scheme -> IO ()
-messageSchemeEffect st tp
-  = do messagePrettyLnLn st (prettySchemeEffect st tp)
-
-prettySchemeEffect :: State -> Scheme -> Doc
-prettySchemeEffect st tp
-  = ppSchemeEffect (prettyEnv st) tp
-
 lastSource :: State -> Source
 lastSource st
   = -- trace ("lastSource: " ++ show (map modSourcePath (loadedModules (loaded0 st))) ++ "," ++ modSourcePath (loadedModule (loaded0 st)) ++ ", " ++ show (errorRange st)) $
@@ -392,7 +378,6 @@ isSourceNull source
 {---------------------------------------------------------------
   Interprete a show command
 ---------------------------------------------------------------}
-
 
 showCommand ::  State -> ShowCommand -> IO ()
 showCommand st cmd
@@ -470,14 +455,6 @@ showCommand st cmd
 {--------------------------------------------------------------------------
   Misc
 --------------------------------------------------------------------------}
-
--- | See "Type.Pretty" for details.
-prettyEnv :: State -> Env
-prettyEnv st
-  = ( prettyEnvFromFlags (flags st) )
-      { context    = loadedName (loaded st)
-      , importsMap = loadedImportMap (loaded st)
-      }
 
 -- | A terminal is a collection of pretty printing 'IO' actions.
 terminal :: State -> Terminal
