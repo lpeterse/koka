@@ -207,14 +207,16 @@ command st cmd
 
       Reload      -> do{ loadFiles (terminal st) st (reset st) (lastLoad st) {- (map (modPath . loadedModule) (tail (loadedModules st))) -} }
 
-      
+      Edit []     -> do io $ messageRemark st "file argument missing"
+      {- TODO: reactivate this after refactoring
       Edit []     -> do{ let fpath = lastFilePath st
                        ; if (null fpath)
                           then do io $ messageRemark st "nothing to edit"
                                   interpreterEx st
                           else do io $ runEditor st fpath
-                                  command st Reload 
+                                  command st Reload
                        }
+      -}
       Edit fname  -> do{ mbpath <- io $ searchSource (flags st) "" (newName fname) -- searchPath (includePath (flags st)) sourceExtension fname
                        ; case mbpath of
                           Nothing    
@@ -264,7 +266,7 @@ command st cmd
                        ; interpreterEx st
                        }
 
-      Show showcmd-> do{ io $ showCommand st showcmd
+      Show showcmd-> do{ io $ interpretShowCommand st showcmd
                        ; interpreterEx st
                        }
       
@@ -308,83 +310,18 @@ command st cmd
         dropEndWhile p 
           = reverse . dropWhile p . reverse
 
-    -- | Only needed by the (Edit []) branch
+    {-- | Only needed by the (Edit []) branch
     lastFilePath :: State -> FilePath
     lastFilePath st'
        = let source = lastSource st'
          in if (isSourceNull source)
             then ""
             else sourceName source
+    -}
 
-{--------------------------------------------------------------------------
-  Helpers
---------------------------------------------------------------------------}
-
-checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
-checkInfer st = checkInferWith st id
-
-checkInfer2 :: State -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
-checkInfer2 st = checkInferWith st (\(_,c) -> c)
-
-checkInferWith ::  State -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
-checkInferWith st _getLoaded showMarker err f
-  = case checkError err of
-      Left msg  -> do io $ when showMarker (maybeMessageMarker st (getRange msg))
-                      io $ messageErrorMsgLnLn st msg
-                      interpreterEx st{ errorRange = Just (getRange msg) }
-      Right (x,ws)
-                -> do let warnings = ws -- modWarnings (loadedModule ld)
-                      io $ when (not (null warnings))
-                        (do let msg = ErrorWarning warnings ErrorZero
-                            when showMarker (maybeMessageMarker st (getRange msg))
-                            messageErrorMsgLnLn st msg)
-                      f x
-
-maybeMessageMarker ::  State -> Range -> IO ()
-maybeMessageMarker st rng
-  = if (lineNo == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
-     then messageMarker st rng
-     else return ()
-  where
-    lineNo :: Int
-    lineNo
-      = bigLine + (length (defines st) + 1)
-
-lastSource :: State -> Source
-lastSource st
-  = -- trace ("lastSource: " ++ show (map modSourcePath (loadedModules (loaded0 st))) ++ "," ++ modSourcePath (loadedModule (loaded0 st)) ++ ", " ++ show (errorRange st)) $
-    let fsource = Source (head $ filter (not . null) $ map modSourcePath $  [loadedModule (loaded0 st)] ++ reverse (loadedModules $ loaded0 st))
-                         bstringEmpty
-        -- fsource = Source (modSourcePath (last (loadedModules (loaded0 st)))) bstringEmpty
-        source  = case errorRange st of
-                    Just rng -> let src = rangeSource rng
-                                in if isSourceNull src 
-                                    then fsource
-                                    else src
-                    Nothing  -> fsource
-    in source
-
-
-
-lastSourceFull :: State -> IO Source
-lastSourceFull st
-  = let source = lastSource st
-    in if (isSourceNull source || not (null (sourceText source)))
-        then return source
-        else do txt <- readInput (sourceName source)
-                          `catchIO` (\msg -> do{ messageError st msg; return bstringEmpty })
-                return (source{ sourceBString = txt })
-
-isSourceNull :: Source -> Bool
-isSourceNull source
-  = (sourceName source == show nameInteractiveModule || null (sourceName source))
-
-{---------------------------------------------------------------
-  Interprete a show command
----------------------------------------------------------------}
-
-showCommand ::  State -> ShowCommand -> IO ()
-showCommand st cmd
+-- | Interpret a show command.
+interpretShowCommand ::  State -> ShowCommand -> IO ()
+interpretShowCommand st cmd
   = case cmd of
       ShowHelp
         -> do messagePrettyLn st $ commandHelp $ colorSchemeFromFlags $ flags st
@@ -456,9 +393,37 @@ showCommand st cmd
     loadedDiff _diff get
       = get (loaded st)
 
+    lastSourceFull :: State -> IO Source
+    lastSourceFull st'
+      = if (isSourceNull lastSource || not (null (sourceText lastSource)))
+          then return lastSource
+          else do txt <- readInput (sourceName lastSource)
+                            `catchIO` (\msg -> do{ messageError st' msg; return bstringEmpty })
+                  return (lastSource{ sourceBString = txt })
+      where
+        lastSource :: Source
+        lastSource
+          = -- trace ("lastSource: " ++ show (map modSourcePath (loadedModules (loaded0 st))) ++ "," ++ modSourcePath (loadedModule (loaded0 st)) ++ ", " ++ show (errorRange st)) $
+            let fsource = Source (head $ filter (not . null) $ map modSourcePath $  [loadedModule (loaded0 st')] ++ reverse (loadedModules $ loaded0 st'))
+                                 bstringEmpty
+                -- fsource = Source (modSourcePath (last (loadedModules (loaded0 st)))) bstringEmpty
+                source  = case errorRange st' of
+                            Just rng -> let src = rangeSource rng
+                                        in if isSourceNull src 
+                                            then fsource
+                                            else src
+                            Nothing  -> fsource
+            in source
+
 {--------------------------------------------------------------------------
   Misc
 --------------------------------------------------------------------------}
+
+-- | A source is considered null if it is the interactive module or the
+--   source name is the empty string.
+isSourceNull :: Source -> Bool
+isSourceNull source
+  = (sourceName source == show nameInteractiveModule || null (sourceName source))
 
 -- | A terminal is a collection of pretty printing 'IO' actions.
 terminal :: State -> Terminal
@@ -471,3 +436,37 @@ terminal st
       ( messagePrettyLn st )
       ( messageScheme st )
       ( messagePrettyLn st )
+
+-- | TODO: document
+checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer st = checkInferWith st id
+
+-- | TODO: document
+checkInfer2 :: State -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer2 st = checkInferWith st (\(_,c) -> c)
+
+-- | TODO: document
+checkInferWith ::  State -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInferWith st _getLoaded showMarker err f
+  = case checkError err of
+      Left msg  -> do io $ when showMarker (maybeMessageMarker st (getRange msg))
+                      io $ messageErrorMsgLnLn st msg
+                      interpreterEx st{ errorRange = Just (getRange msg) }
+      Right (x,ws)
+                -> do let warnings = ws -- modWarnings (loadedModule ld)
+                      io $ when (not (null warnings))
+                        (do let msg = ErrorWarning warnings ErrorZero
+                            when showMarker (maybeMessageMarker st (getRange msg))
+                            messageErrorMsgLnLn st msg)
+                      f x
+
+-- | TODO: document
+maybeMessageMarker ::  State -> Range -> IO ()
+maybeMessageMarker st rng
+  = if (lineNo == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
+     then messageMarker st rng
+     else return ()
+  where
+    lineNo :: Int
+    lineNo
+      = bigLine + (length (defines st) + 1)
