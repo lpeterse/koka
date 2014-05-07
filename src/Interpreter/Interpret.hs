@@ -33,7 +33,6 @@ import Common.NamePrim        ( nameExpr, nameType, nameInteractive, nameInterac
 import Common.Range
 import Common.Error
 
-import Common.Syntax
 import Syntax.Syntax
 
 import Syntax.Highlight       ( highlightPrint )
@@ -48,6 +47,7 @@ import Compiler.Options
 import Compiler.Compile
 import Interpreter.Command
 import Interpreter.State      ( State(..), reset )
+import Interpreter.Load       ( loadFilesErr )
 import Interpreter.Message    ( message
                               , messageLn
                               , messageLnLn
@@ -152,7 +152,7 @@ interpreterEx st
 command ::  State -> Command -> ReadLineT IO ()
 command st cmd
   = case cmd of
-      Eval ln     -> do{ err <- io $ compileExpression term (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine ln
+      Eval ln     -> do{ err <- io $ compileExpression (terminal st) (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine ln
                        ; checkInfer st True err $ \ld -> 
                          do if (not (evaluate (flags st))) 
                              then let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
@@ -161,7 +161,7 @@ command st cmd
                             interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
                        }
 
-      Define ln   -> do err <- io $ compileValueDef term (flags st) (loaded st) (program st) (lineNo st) ln
+      Define ln   -> do err <- io $ compileValueDef (terminal st) (flags st) (loaded st) (program st) (lineNo st) ln
                         checkInfer2 st True err $ \(defName',ld) ->
                            do{ let tp    = infoType $ gammaFind defName' (loadedGamma ld)
                                    tpdoc = prettyScheme st tp
@@ -173,14 +173,14 @@ command st cmd
                                              }
                              }
 
-      TypeOf ln   -> do err <- io $ compileExpression term (flags st) (loaded st) Object (program st) bigLine ln
+      TypeOf ln   -> do err <- io $ compileExpression (terminal st) (flags st) (loaded st) Object (program st) bigLine ln
                         checkInfer st True err $ \ld ->
                            do{ let tp = infoType $ gammaFind (qualify nameInteractive nameExpr) (loadedGamma ld)
                              ; io $ messageSchemeEffect st tp
                              ; interpreter st{ loaded = ld } -- (loaded st){ loadedModules  = loadedModules ld }}
                              }
 
-      KindOf ln   -> do err <- io $ compileType term (flags st) (loaded st) (program st) bigLine ln 
+      KindOf ln   -> do err <- io $ compileType (terminal st) (flags st) (loaded st) (program st) bigLine ln 
                         checkInfer st True err $ \ld ->
                            do{ let kind = kgammaFind (getName (program st)) nameType (loadedKGamma ld)
                              ; io $ messagePrettyLnLn st (prettyKind (colorSchemeFromFlags (flags st)) (snd kind))
@@ -188,7 +188,7 @@ command st cmd
                              }
 
       TypeDef ln  -> -- trace ("modules: " ++ show (map (show . modName . loadedModule) (loadedModules st))) $
-                     do err <- io $ compileTypeDef term (flags st) (loaded st) (program st) (lineNo st) ln
+                     do err <- io $ compileTypeDef (terminal st) (flags st) (loaded st) (program st) (lineNo st) ln
                         checkInfer2 st True err $ \(defName', ld) ->
                          do{ let (_qname,kind) = kgammaFind (getName (program st)) defName'(loadedKGamma ld)
                            ; io $ messagePrettyLnLn st (text (show defName') <+> text "::" <+> pretty kind)
@@ -200,10 +200,10 @@ command st cmd
                            }
 
       Load fnames -> do{ let st' = st{ lastLoad = fnames } 
-                       ; loadFiles term st' (reset st') fnames 
+                       ; loadFiles (terminal st) st' (reset st') fnames 
                        }
 
-      Reload      -> do{ loadFiles term st (reset st) (lastLoad st) {- (map (modPath . loadedModule) (tail (loadedModules st))) -} }
+      Reload      -> do{ loadFiles (terminal st) st (reset st) (lastLoad st) {- (map (modPath . loadedModule) (tail (loadedModules st))) -} }
 
       
       Edit []     -> do{ let fpath = lastFilePath st
@@ -271,82 +271,30 @@ command st cmd
 
       None        -> do{ interpreterEx st }
   where
-    term = terminal st
-
     lineNo :: State -> Int
     lineNo st'
       = bigLine + (length (defines st') + 1)
 
-{--------------------------------------------------------------------------
-  File loading
---------------------------------------------------------------------------}
+    loadFiles :: Terminal -> State -> State -> [FilePath] -> ReadLineT IO ()
+    loadFiles term originalSt startSt files'
+      = do err <- io $ loadFilesErr term startSt files'
+           case checkError err of
+             Left msg -> interpreterEx originalSt{ errorRange = Just (getRange msg) }
+             Right (st',_warnings) -> interpreterEx st'
 
-loadFiles :: Terminal -> State -> State -> [FilePath] -> ReadLineT IO ()
-loadFiles term originalSt startSt files'
-  = do err <- io $ loadFilesErr term startSt files'
-       case checkError err of
-         Left msg -> interpreterEx originalSt{ errorRange = Just (getRange msg) }
-         Right (st,_warnings) -> interpreterEx st 
+    errorFileNotFound :: Flags -> FilePath -> ErrorMessage 
+    errorFileNotFound flgs name
+      = ErrorIO (docNotFound (colorSchemeFromFlags flgs) (includePath flgs) name)
 
-loadFilesErr :: Terminal -> State -> [FilePath] -> IO (Error State)
-loadFilesErr term startSt fileNames
-  = do walk [] startSt fileNames
-  where
-    walk :: [Module] -> State -> [FilePath] -> IO (Error State)
-    walk imports st files'
-      = case files' of
-          []  -> do if (not (null imports))
-                      then do messageInfoLn st "modules:"
-                              sequence_ [messageLn st ("  " ++ show (modName m) ) | m <- imports ]
-
-                      else return () -- messageRemark st "nothing to load"
-                    messageLn st ""
-                    let st' = st{ program = programAddImports (program st) (map toImport imports) }
-                        toImport mod'
-                            = Import (modName mod') (modName mod') rangeNull Private
-                    return (return st')
-          (fname:fnames)
-              -> do{ err <- {- if (False) -- any isPathSep fname) 
-                             then compileFile term (flags st) (loadedModules (loaded0 st)) Object fname
-                             else compileModule term (flags st) (loadedModules (loaded0 st)) (newName fname)
-                             -}
-                             compileModuleOrFile term (flags st) (loadedModules (loaded0 st)) fname
-                   ; case checkError err of 
-                       Left msg 
-                          -> do messageErrorMsgLnLn st msg
-                                return (errorMsg msg) 
-                       Right (ld,warnings)
-                          -> do{ -- let warnings = modWarnings (loadedModule ld)
-                               ; err' <- if not (null warnings)
-                                         then do let msg = ErrorWarning warnings ErrorZero
-                                                 messageErrorMsgLn st msg
-                                                 return (Just (getRange msg))
-                                         else do return (errorRange st)
-                               ; let newst = st{ loaded        = ld
-                                               , loaded0       = ld
-                                               -- , modules       = modules st ++ [(fname,loadedModule ld)]
-                                               , errorRange    = err'
-                                               , loadedPrelude = if (modName (loadedModule ld) == nameSystemCore ) 
-                                                                  then ld else loadedPrelude st
-                                               }
-                               ; let modl = loadedModule ld
-                               ; walk (if (modName modl == nameSystemCore) then imports else (modl : imports)) newst fnames
-                               }
-                   }
-
-errorFileNotFound :: Flags -> FilePath -> ErrorMessage 
-errorFileNotFound flgs name
-  = ErrorIO (docNotFound (colorSchemeFromFlags flgs) (includePath flgs) name)
-
-docNotFound :: ColorScheme -> [FilePath] -> String -> Doc
-docNotFound cscheme path name
-  = text "could not find:" <+> ppPath name <$>
-    if (null path)
-     then text ("search path empty. (use the \"-i\" flag at command line?)")
-     else text "search path   :" <+> align (cat (punctuate comma (map ppPath path))) 
-  where
-    ppPath p
-      = color (colorSource cscheme) (text p)
+    docNotFound :: ColorScheme -> [FilePath] -> String -> Doc
+    docNotFound cscheme path name
+      = text "could not find:" <+> ppPath name <$>
+        if (null path)
+         then text ("search path empty. (use the \"-i\" flag at command line?)")
+         else text "search path   :" <+> align (cat (punctuate comma (map ppPath path))) 
+      where
+        ppPath p
+          = color (colorSource cscheme) (text p)
 
 {--------------------------------------------------------------------------
   Helpers

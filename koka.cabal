@@ -135,6 +135,7 @@ executable koka
                      Interpreter.Message,
                      Interpreter.Quote,
                      Interpreter.Editor,
+                     Interpreter.Load,
                      Interpreter.Interpret,
                      Kind.Assumption,
                      Kind.Constructors,
