@@ -1,8 +1,9 @@
-kind/bgroup3/aa: V
-kind/bgroup3/bb: V
-kind/bgroup3/cc: V
-kind/bgroup3/int: V
-kind/bgroup3/xx: V
+test/kind/bgroup3/aa: V
+test/kind/bgroup3/bb: V
+test/kind/bgroup3/cc: V
+test/kind/bgroup3/int: V
+test/kind/bgroup3/xx: V
+
 public alias aa = int = 1
 public alias bb = cc = 3
 public alias cc = aa = 2

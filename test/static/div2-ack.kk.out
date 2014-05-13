@@ -1,4 +1,5 @@
-static/div2-ack/nat: V
+test/static/div2-ack/nat: V
+
 Succ : (succ : nat) -> nat
 Zero : nat
 ack : (nat, nat) -> nat

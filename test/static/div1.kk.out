@@ -1,4 +1,5 @@
-static/div1/nat: V
+test/static/div1/nat: V
+
 Succ : (nat) -> nat
 Zero : nat
 h : (nat, nat) -> nat

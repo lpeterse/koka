@@ -1,2 +1,3 @@
-static/module1/ok: V
+test/static/module1/ok: V
+
 public alias ok = static/modA/aint = 2

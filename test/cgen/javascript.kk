@@ -1,4 +1,3 @@
-module codegen.javascript
 
 function prematureReturn(xs: list<int>): bool {
   val x = match(xs) {

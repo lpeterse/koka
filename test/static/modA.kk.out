@@ -1,3 +1,4 @@
-static/modA/aint: V
-static/modA/int: V
+test/static/modA/aint: V
+test/static/modA/int: V
+
 public alias aint = int = 1

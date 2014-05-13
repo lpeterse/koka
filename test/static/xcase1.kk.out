@@ -1,2 +1,3 @@
-static/xcase1/bar: V
+test/static/xcase1/bar: V
+
 public alias bar = static/modA/aint = 2
