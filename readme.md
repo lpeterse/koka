@@ -1,32 +1,22 @@
 Koka: a function-oriented language with effect inference
 --------------------------------------------------------
 
-To build Koka from source you need to install:
+ To build Koka from source you need to install:
 
-  * The latest [Haskell platform](http://www.haskell.org/platform) (version 7.4 or later).
-  * The latest [NodeJS](http://nodejs.org) runtime (version 0.10 or later).
+  * The [Haskell platform](http://www.haskell.org/platform) (known to work with 2013.2.0.0 or later).
+  * libncurses5-dev (on Linux)
+  * node.js (optional)
 
 After installing the above tools, go to the Koka directory and type:
 
-    > npm install
+    > cabal update && cabal install
 
-which will install any prerequisites. Now build and run Koka by typing:
-
-    > jake 
-
-To get proper line editing support in the koka interpreter you might want to link against Haskeline, a platform independent readline replacement. First install it via cabal (if available), then tell jake to use it:
-
-    > cabal install haskeline
-    > cli=haskeline jake
-
-To see more build options, type:
-
-    > jake help
+This will install Koka locally for the current user.
 
 Starting out
 ------------
 
-After running `jake`, the Koka interpreter will start:
+After running `koka`, the Koka interpreter will start:
 
     __          _
     | |        | |
@@ -89,14 +79,13 @@ And quit the interpreter:
 
 Have fun!
   Daan Leijen
+  Lars Petersen
 
 
 Development
 -----------
 
 For development we recommend:
-
-  * The [TortoisHg](http://tortoisehg.bitbucket.org/download) distribution for mercurial source control.
 
   * The excellent [SublimeText](http://www.sublimetext.com) text editor. There is a full Koka and Haskell
     language mode for SublimeText (run `jake sublime` to install the Koka mode on your system).
