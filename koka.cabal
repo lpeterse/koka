@@ -47,7 +47,7 @@ test-suite test-koka
   test-module:       TestSuite1
   hs-source-dirs:    src
   default-language:  Haskell98
-  build-depends:     base >=4.6 && <4.7,
+  build-depends:     base >=4.6 && <5,
                      containers >=0.5 && <0.6,
                      parsec >=3.1 && <3.2,
                      text >=1.1 && <1.2,
@@ -56,12 +56,12 @@ test-suite test-koka
                      haskeline >=0.7 && <0.8,
                      bytestring >=0.10 && <0.11,
                      directory >=1.2 && <1.3,
-                     process >=1.1 && <1.2,
+                     process >=1.1,
                      filepath >=1.3 && <1.4,
                      random >=1.0 && <1.1,
                      transformers >=0.3 && <0.4,
-                     array >=0.4 && <0.5,
-                     haskeline, Cabal >= 1.9.2
+                     array >=0.4,
+                     Cabal
 
 executable koka
   main-is:           Main.hs
@@ -80,7 +80,7 @@ executable koka
     cpp-options:     -DCLI=CLI_HASKELINE
                      -D__CABAL__
 
-  build-depends:     base >=4.6 && <4.7,
+  build-depends:     base >=4.6 && <5,
                      containers >=0.5 && <0.6,
                      parsec >=3.1 && <3.2,
                      text >=1.1 && <1.2,
@@ -89,12 +89,11 @@ executable koka
                      haskeline >=0.7 && <0.8,
                      bytestring >=0.10 && <0.11,
                      directory >=1.2 && <1.3,
-                     process >=1.1 && <1.2,
+                     process >=1.1,
                      filepath >=1.3 && <1.4,
                      random >=1.0 && <1.1,
                      transformers >=0.3 && <0.4,
-                     array >=0.4 && <0.5,
-                     haskeline
+                     array >=0.4
   other-modules:     Backend.CSharp.FromCore,
                      Backend.JavaScript.FromCore,
                      Common.ColorScheme,
