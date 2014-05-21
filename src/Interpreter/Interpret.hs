@@ -24,7 +24,7 @@ import Control.Monad.IO.Class      ( MonadIO, liftIO )
 
 import Platform.ReadLine      ( ReadLineT, runReadLineT, readLine )
 import Lib.PPrint
-import Lib.Printer
+import Lib.Printer            ( Printer(..) )
 import Common.Failure         ( catchIO )
 import Common.ColorScheme
 import Common.File            ( joinPath )
@@ -77,7 +77,7 @@ io = liftIO
 
 -- | Loads the requested modules and goes into an evaluation loop prompting
 --   the user for input to be evaluated.
-interpret :: ColorPrinter   -- ^ supplies 'IO' actions for (coloured) output to stdout
+interpret :: Printer p => p -- ^ supplies 'IO' actions for (coloured) output to stdout
              -> Flags       -- ^ flags for example from the command line
              -> [FilePath]  -- ^ files to load initially
              -> IO ()       -- ^
@@ -120,38 +120,25 @@ interpret printer' flags0 files'
 
 -- | A thin wrapper around the 'readLine' call that specifies the prompt
 --   and a fallback command (:quit) in case 'readLine' returns 'Nothing'.
-getCommand :: State -> ReadLineT IO Command
+getCommand :: Printer p => State p -> ReadLineT IO Command
 getCommand st
-  = parseCommand `fmap` maybe ":quit" id `fmap` readLine ansiPrompt
-  where
-    -- Since readLine requires a string instead of an IO action
-    -- we need to dispatch on the terminal type and assemble a string
-    -- containing an ansi escape sequence if this is an ansi terminal.
-    -- TODO: find a nicer solution. This is a layering violation.
-    ansiEscape :: String -> String
-    ansiEscape  = if isAnsiPrinter (printer st)
-                    then ansiWithColor $ colorInterpreter
-                                       $ colorSchemeFromFlags
-                                       $ flags st
-                    else id
-    ansiPrompt :: String
-    ansiPrompt  = ansiEscape "> "
+  = parseCommand `fmap` maybe ":quit" id `fmap` readLine "> "
 
 -- | Tail-recursively calls 'interpreterEx' and clears 'errorRange'
-interpreter :: State -> ReadLineT IO ()
+interpreter :: Printer p => State p -> ReadLineT IO ()
 interpreter st
   = do interpreterEx st'
   where
     st' = st{ errorRange = Nothing }
 
 -- | Fetches a command and tail-recursively calls 'command' for evaluation
-interpreterEx :: State -> ReadLineT IO ()
+interpreterEx :: Printer p => State p -> ReadLineT IO ()
 interpreterEx st
   = do cmd <- getCommand st
        command st cmd
 
 -- | Interpret a command and (if not quit) recurses to 'interpreter'
-command ::  State -> Command -> ReadLineT IO ()
+command :: Printer p => State p -> Command -> ReadLineT IO ()
 command st cmd
   = case cmd of
       Eval ln     -> do{ err <- io $ compileExpression (terminal st) (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine ln
@@ -275,11 +262,11 @@ command st cmd
 
       None        -> do{ interpreterEx st }
   where
-    lineNo :: State -> Int
+    lineNo :: State p -> Int
     lineNo st'
       = bigLine + (length (defines st') + 1)
 
-    loadFiles :: Terminal -> State -> State -> [FilePath] -> ReadLineT IO ()
+    loadFiles :: Printer p => Terminal -> State p -> State p -> [FilePath] -> ReadLineT IO ()
     loadFiles term originalSt startSt files'
       = do err <- io $ loadFilesErr term startSt files'
            case checkError err of
@@ -320,7 +307,7 @@ command st cmd
     -}
 
 -- | Interpret a show command.
-interpretShowCommand ::  State -> ShowCommand -> IO ()
+interpretShowCommand :: Printer p => State p -> ShowCommand -> IO ()
 interpretShowCommand st cmd
   = case cmd of
       ShowHelp
@@ -393,7 +380,7 @@ interpretShowCommand st cmd
     loadedDiff _diff get
       = get (loaded st)
 
-    lastSourceFull :: State -> IO Source
+    lastSourceFull :: Printer p => State p -> IO Source
     lastSourceFull st'
       = if (isSourceNull lastSource || not (null (sourceText lastSource)))
           then return lastSource
@@ -426,7 +413,7 @@ isSourceNull source
   = (sourceName source == show nameInteractiveModule || null (sourceName source))
 
 -- | A terminal is a collection of pretty printing 'IO' actions.
-terminal :: State -> Terminal
+terminal :: Printer p => State p -> Terminal
 terminal st
   = Terminal
       ( messageErrorMsgLn st )
@@ -438,15 +425,15 @@ terminal st
       ( messagePrettyLn st )
 
 -- | TODO: document
-checkInfer ::  State -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer ::  Printer p => State p -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInfer st = checkInferWith st id
 
 -- | TODO: document
-checkInfer2 :: State -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer2 :: Printer p => State p -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInfer2 st = checkInferWith st (\(_,c) -> c)
 
 -- | TODO: document
-checkInferWith ::  State -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInferWith :: Printer p => State p -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
 checkInferWith st _getLoaded showMarker err f
   = case checkError err of
       Left msg  -> do io $ when showMarker (maybeMessageMarker st (getRange msg))
@@ -461,7 +448,7 @@ checkInferWith st _getLoaded showMarker err f
                       f x
 
 -- | TODO: document
-maybeMessageMarker ::  State -> Range -> IO ()
+maybeMessageMarker :: Printer p => State p -> Range -> IO ()
 maybeMessageMarker st rng
   = if (lineNo == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
      then messageMarker st rng

@@ -13,6 +13,8 @@ module Interpreter.Editor
 
 import System.Cmd                  ( system )
 
+import Lib.Printer
+
 import Common.Range
 
 import Compiler.Options            ( editor )
@@ -20,7 +22,7 @@ import Compiler.Options            ( editor )
 import Interpreter.State
 import Interpreter.Message
 
-runEditor ::  State -> FilePath -> IO ()
+runEditor ::  Printer p => State p -> FilePath -> IO ()
 runEditor st fpath
   = let (row,col) = case errorRange st of
                       Just rng  | sourceName (rangeSource rng) == fpath
@@ -28,7 +30,7 @@ runEditor st fpath
                       _ -> (1,1)
     in runEditorAt st fpath row col
 
-runEditorAt ::  State -> FilePath -> Int -> Int -> IO ()
+runEditorAt ::  Printer p => State p -> FilePath -> Int -> Int -> IO ()
 runEditorAt st fpath row col
   = let cmd  = replace $ editor (flags st)
     in if null (editor (flags st))

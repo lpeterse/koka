@@ -17,10 +17,10 @@ module Lib.Printer(
                 , Printer( write, writeText, writeLn, writeTextLn, flush, withColor, withBackColor, withReverse, withUnderline    , setColor, setBackColor, setReverse, setUnderline ) 
                 -- * Printers
               , MonoPrinter, withMonoPrinter
-              , ColorPrinter, withColorPrinter, withNoColorPrinter, withFileNoColorPrinter, isAnsiPrinter
               , AnsiPrinter, withAnsiPrinter
+              , ConsolePrinter, withConsolePrinter
               , withFilePrinter, withNewFilePrinter
-              , withHtmlPrinter, withHtmlColorPrinter
+              , withHtmlPrinter, withHtmlPrinter
                 -- * Misc.
               , ansiWithColor
               ) where
@@ -301,70 +301,6 @@ seqColor backGround c
 
 
 {--------------------------------------------------------------------------
-  Color console code
---------------------------------------------------------------------------}  
--- | A color printer supports colored output 
-data ColorPrinter = PCon  ConsolePrinter
-                  | PAnsi AnsiPrinter
-                  | PMono MonoPrinter
-                  | PFile FilePrinter
-                  | PHTML HtmlPrinter
-
--- | Use a color-enabled printer.
-withColorPrinter :: (ColorPrinter -> IO b) -> IO b
-withColorPrinter f
-  = Con.withConsole $ \success ->
-    if success
-     then f (PCon (ConsolePrinter ()))
-     else withAnsiPrinter (f . PAnsi)
-
-withHtmlColorPrinter :: (ColorPrinter -> IO b) -> IO b
-withHtmlColorPrinter f
-  = withHtmlPrinter (f. PHTML)
-
--- | Disable the color output of a color printer. 
--- This can be useful if one wants to avoid overloading.
-withNoColorPrinter :: (ColorPrinter -> IO b) -> IO b
-withNoColorPrinter f
-  = withMonoPrinter (\p -> f (PMono p))
-
--- | Disable the color output of a color printer. 
--- This can be useful if one wants to avoid overloading.
-withFileNoColorPrinter :: FilePath -> (ColorPrinter -> IO b) -> IO b
-withFileNoColorPrinter fname f
-  = withFilePrinter fname (\p -> f (PFile p))
-
--- | Is this an ANSI printer?
-isAnsiPrinter :: ColorPrinter -> Bool
-isAnsiPrinter cp 
-  = case cp of
-      PAnsi ansi  -> True
-      _           -> False
-
-
-instance Printer ColorPrinter where
-  write p s             = cmap p write write write write write s
-  writeLn p s           = cmap p writeLn writeLn writeLn writeLn writeLn s
-  flush p               = cmap p flush flush flush flush flush
-  withColor p c io      = cmap p withColor withColor withColor withColor withColor c io
-  withBackColor p c io  = cmap p withBackColor withBackColor withBackColor withBackColor withBackColor c io
-  withReverse p r io    = cmap p withReverse withReverse withReverse withReverse withReverse r io
-  withUnderline p u io  = cmap p withUnderline withUnderline withUnderline withUnderline withUnderline u io
-  setColor p c          = cmap p setColor setColor setColor setColor setColor c
-  setBackColor p c      = cmap p setBackColor setBackColor setBackColor setBackColor setBackColor c
-  setReverse p r        = cmap p setReverse setReverse setReverse setReverse setReverse r
-  setUnderline p u      = cmap p setUnderline setUnderline setUnderline setUnderline setUnderline u
-  
-cmap p f g h i j
-  = case p of
-      PCon  cp -> f cp 
-      PAnsi ap -> g ap 
-      PMono mp -> h mp
-      PFile fp -> i fp
-      PHTML hp -> j hp
-
-
-{--------------------------------------------------------------------------
   Windows console code
 --------------------------------------------------------------------------}  
 -- | Windows console printer
@@ -385,6 +321,9 @@ instance Printer ConsolePrinter where
   setReverse p r        = Con.setReverse r
   setUnderline p u      = Con.setUnderline u
 
+withConsolePrinter :: (ConsolePrinter -> IO a) -> IO a
+withConsolePrinter f
+  = f (ConsolePrinter ())
 
 {--------------------------------------------------------------------------
   HTML printer

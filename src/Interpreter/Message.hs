@@ -22,70 +22,70 @@ import Type.Pretty            ( ppScheme, ppSchemeEffect, Env(context,importsMap
 
 import Interpreter.State
 
-messageEvaluation :: State -> IO ()
+messageEvaluation :: Printer p => State p -> IO ()
 messageEvaluation st
   = messageInfoLnLn st "evaluation is disabled"
 
-messageErrorMsgLn :: State -> ErrorMessage -> IO ()
+messageErrorMsgLn :: Printer p => State p -> ErrorMessage -> IO ()
 messageErrorMsgLn st err
   = messagePrettyLn st (ppErrorMessage (showSpan (flags st)) (colorSchemeFromFlags (flags st)) err)
 
-messageErrorMsgLnLn :: State -> ErrorMessage -> IO ()
+messageErrorMsgLnLn :: Printer p => State p -> ErrorMessage -> IO ()
 messageErrorMsgLnLn st err
   = messagePrettyLnLn st (ppErrorMessage (showSpan (flags st)) (colorSchemeFromFlags (flags st)) err)
 
-messageError ::  State -> String -> IO ()
+messageError ::  Printer p => State p -> String -> IO ()
 messageError st msg
   = messageInfoLnLn st msg
 
-messageInfoLnLn ::  State -> String -> IO ()
+messageInfoLnLn ::  Printer p => State p -> String -> IO ()
 messageInfoLnLn st s
   = do messageInfoLn st s
        messageLn st ""
 
-messageInfoLn ::  State -> String -> IO ()
+messageInfoLn ::  Printer p => State p -> String -> IO ()
 messageInfoLn st s
   = do messageInfo st s
        messageLn st ""     
        
-messageInfo ::  State -> String -> IO ()
+messageInfo ::  Printer p => State p -> String -> IO ()
 messageInfo st s
   = withColor (printer st) (colorInterpreter colors) (message st s)
   where
     colors
       = colorSchemeFromFlags (flags st)
 
-messagePrettyLnLn ::  State -> Doc -> IO ()
+messagePrettyLnLn ::  Printer p => State p -> Doc -> IO ()
 messagePrettyLnLn st d
   = do messagePrettyLn st d
        messageLn st ""
 
-messagePrettyLn ::  State -> Doc -> IO ()
+messagePrettyLn ::  Printer p => State p -> Doc -> IO ()
 messagePrettyLn st d
   = do messagePretty st d
        messageLn st ""
 
-messagePretty ::  State -> Doc -> IO ()
+messagePretty ::  Printer p => State p -> Doc -> IO ()
 messagePretty st d
   = writePretty (printer st) d
 
-messageLnLn ::  State -> String -> IO ()
+messageLnLn ::  Printer p => State p -> String -> IO ()
 messageLnLn st s
   = messageLn st (s ++ "\n")
 
-messageLn ::  State -> String -> IO ()
+messageLn ::  Printer p => State p -> String -> IO ()
 messageLn st s
   = writeLn (printer st) s
 
-message ::  State -> String -> IO ()
+message ::  Printer p => State p -> String -> IO ()
 message st s
   = write (printer st) s
 
-messageRemark ::  State -> String -> IO ()
+messageRemark ::  Printer p => State p -> String -> IO ()
 messageRemark st s
   = messageInfoLnLn st ("<" ++ s ++ ">")
 
-messageMarker ::  State -> Range -> IO ()
+messageMarker ::  Printer p => State p -> Range -> IO ()
 messageMarker st rng
   = messagePrettyLn st makeMarker
   where
@@ -96,7 +96,7 @@ messageMarker st rng
       = let c1 = posColumn (rangeStart rng)
         in color (colorMarker colors) (text (replicate (c1 + 1) ' ' ++ replicate 1 '^'))
 
-messageHeader :: State -> IO ()
+messageHeader :: Printer p => State p -> IO ()
 messageHeader st
   = messagePrettyLnLn st header
   where
@@ -111,24 +111,24 @@ messageHeader st
        ]
     headerVersion = text $ "version " ++ Config.version ++ (if Config.buildVariant /= "release" then (" (" ++ Config.buildVariant ++ ")") else "") ++ ", " ++ Config.buildDate
 
-messageScheme ::  State -> Scheme -> IO ()
+messageScheme ::  Printer p => State p -> Scheme -> IO ()
 messageScheme st tp
   = messagePrettyLnLn st (prettyScheme st tp)
 
-prettyScheme :: State -> Scheme -> Doc
+prettyScheme :: Printer p => State p -> Scheme -> Doc
 prettyScheme st tp
   = ppScheme (prettyEnv st) tp
 
-messageSchemeEffect ::  State -> Scheme -> IO ()
+messageSchemeEffect ::  Printer p => State p -> Scheme -> IO ()
 messageSchemeEffect st tp
   = messagePrettyLnLn st (prettySchemeEffect st tp)
 
-prettySchemeEffect :: State -> Scheme -> Doc
+prettySchemeEffect :: Printer p => State p -> Scheme -> Doc
 prettySchemeEffect st tp
   = ppSchemeEffect (prettyEnv st) tp
 
 -- | See "Type.Pretty" for details.
-prettyEnv :: State -> Env
+prettyEnv :: Printer p => State p -> Env
 prettyEnv st
   = ( prettyEnvFromFlags (flags st) )
       { context    = loadedName (loaded st)

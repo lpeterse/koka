@@ -14,6 +14,7 @@ module Interpreter.Load
   ( loadFilesErr
   ) where
 
+import Lib.Printer
 import Common.Range
 import Common.Error
 import Common.NamePrim
@@ -24,11 +25,11 @@ import Syntax.Syntax
 import Interpreter.State
 import Interpreter.Message
 
-loadFilesErr :: Terminal -> State -> [FilePath] -> IO (Error State)
+loadFilesErr :: Printer p => Terminal -> State p -> [FilePath] -> IO (Error (State p))
 loadFilesErr term startSt fileNames
   = do walk [] startSt fileNames
   where
-    walk :: [Module] -> State -> [FilePath] -> IO (Error State)
+    walk :: Printer p => [Module] -> State p -> [FilePath] -> IO (Error (State p))
     walk imports st files'
       = case files' of
           []  -> do if (not (null imports))

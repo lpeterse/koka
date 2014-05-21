@@ -11,7 +11,6 @@ module Interpreter.State
   , reset
   ) where
 
-import Lib.Printer            ( ColorPrinter )
 import Common.Name            ( Name )
 import Common.NamePrim        ( nameInteractiveModule )
 import Common.Range           ( Range )
@@ -21,21 +20,21 @@ import Syntax.Syntax          ( UserProgram, programNull )
 import Compiler.Module        ( Loaded, initialLoaded )
 import Compiler.Options       ( Flags(..) )
 
-data State = State{  printer       :: ColorPrinter
-                   -- system variables
-                   , flags         :: Flags
-                   , evalDisable   :: Bool
-                   -- program state
-                   , loaded0       :: Loaded            -- ^ load state just after :l command
-                   , loaded        :: Loaded            -- ^ load state with interactive defs
-                   , defines       :: [(Name,[String])] -- ^ interactive definitions
-                   , program       :: UserProgram       -- ^ interactive definitions as a program
-                   , errorRange    :: Maybe Range       -- ^ last error location
-                   , lastLoad      :: [FilePath]        -- ^ last load command
-                   , loadedPrelude :: Loaded            -- ^ load state after loading the prelude
-                   }
+data State p = State{  printer      :: p
+                    -- system variables
+                    , flags         :: Flags
+                    , evalDisable   :: Bool
+                    -- program state
+                    , loaded0       :: Loaded            -- ^ load state just after :l command
+                    , loaded        :: Loaded            -- ^ load state with interactive defs
+                    , defines       :: [(Name,[String])] -- ^ interactive definitions
+                    , program       :: UserProgram       -- ^ interactive definitions as a program
+                    , errorRange    :: Maybe Range       -- ^ last error location
+                    , lastLoad      :: [FilePath]        -- ^ last load command
+                    , loadedPrelude :: Loaded            -- ^ load state after loading the prelude
+                    }
 
-reset :: State -> State
+reset :: State p -> State p
 reset st
   =  st{ program       = programNull nameInteractiveModule
        , defines       = [] 

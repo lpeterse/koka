@@ -16,11 +16,12 @@ import System.Exit            ( exitFailure )
 import Control.Monad          ( when )
 
 import Lib.PPrint             ( Pretty(pretty), writePrettyLn )
-import Lib.Printer            ( writeLn, ColorPrinter, withColorPrinter, withFileNoColorPrinter, withNoColorPrinter, withHtmlColorPrinter )
+import Lib.Printer            ( Printer(..), writeLn, withFilePrinter, withConsolePrinter, withAnsiPrinter,withMonoPrinter,withHtmlPrinter )
 import Common.Error           ( ErrorMessage(..), ppErrorMessage, checkError )
 import Common.Name            ( newName, nameNil )
 import qualified Compiler.Options as Options
 import Compiler.Compile       ( compileFile, CompileTarget(..), Module(..), Loaded(..), Terminal(..) )
+import Platform.Console       ( withConsole )
 import Interpreter.Interpret  ( interpret  )
 import Kind.ImportMap         ( importsEmpty )
 import Kind.Synonym           ( synonymsIsEmpty, ppSynonyms, synonymsFilter )
@@ -48,18 +49,23 @@ mainh     = mainArgs "-ilib -itest --console=raw"
 mainArgs :: String -> IO ()
 mainArgs args
   = do  (flags, mode) <- Options.getOptions args
-        let withPrinter | not $ null $ Options.redirectOutput flags
-                        = withFileNoColorPrinter (Options.redirectOutput flags)
-                        | Options.console flags == "html"
-                        = withHtmlColorPrinter
-                        | Options.console flags == "ansi"
-                        = withColorPrinter
-                        | otherwise
-                        = withNoColorPrinter
-        withPrinter (mainMode flags mode)
+        let mm :: Printer p => p -> IO ()
+            mm = mainMode flags mode
+            io | not $ null $ Options.redirectOutput flags
+               = withFilePrinter (Options.redirectOutput flags) mm
+               | Options.console flags == "html"
+               = withHtmlPrinter mm
+               | Options.console flags == "ansi"
+               = withConsole $ \success ->
+                 if success
+                   then withConsolePrinter mm
+                   else withAnsiPrinter mm
+               | otherwise
+               = withMonoPrinter mm
+        io
 
 -- | Decides based on 'Options.Mode' whether to run as compiler/interpreter/etc.
-mainMode :: Options.Flags -> Options.Mode -> ColorPrinter -> IO ()
+mainMode :: Printer p => Options.Flags -> Options.Mode -> p -> IO ()
 mainMode flags mode p
   = case mode of
       Options.ModeHelp
@@ -77,7 +83,7 @@ mainMode flags mode p
        -> interpret p flags files
 
 -- | Compile a single file designated by filename and print errors
-compileAndPrintErrors :: ColorPrinter -> Options.Flags -> FilePath -> IO ()
+compileAndPrintErrors :: Printer p => p -> Options.Flags -> FilePath -> IO ()
 compileAndPrintErrors p flags fname
   = do let exec = Executable (newName "main") ()
        err <- compileFile

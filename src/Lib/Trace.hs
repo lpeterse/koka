@@ -25,4 +25,4 @@ traceDoc msg x
   
 ctrace :: Color -> String -> a -> a
 ctrace clr msg x
-  = seq (unsafePerformIO (withColorPrinter $ \p -> withColor p clr (writeLn p msg))) x
+  = seq (unsafePerformIO (withConsolePrinter $ \p -> withColor p clr (writeLn p msg))) x

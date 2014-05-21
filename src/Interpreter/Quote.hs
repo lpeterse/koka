@@ -12,10 +12,12 @@ module Interpreter.Quote
 
 import System.Random
 
+import Lib.Printer
+
 import Interpreter.State
 import Interpreter.Message ( messageInfoLnLn )
 
-messageQuote ::  State -> IO ()
+messageQuote :: Printer p => State p -> IO ()
 messageQuote st
   = do idx <- randomRIO (0,length quotes-1)
        let (quote,author) = quotes!!idx
