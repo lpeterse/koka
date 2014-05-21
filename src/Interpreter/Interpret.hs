@@ -15,7 +15,7 @@ module Interpreter.Interpret
   ) where
 
 import System.Directory            ( getCurrentDirectory, setCurrentDirectory )
-import System.Cmd                  ( system )
+import System.Process              ( system )
 import System.Exit                 ( ExitCode(..) )
 import Data.List                   ( isPrefixOf )
 import Data.Char                   ( isSpace )
@@ -121,7 +121,7 @@ interpret printer' flags0 files'
 -- | A thin wrapper around the 'readLine' call that specifies the prompt
 --   and a fallback command (:quit) in case 'readLine' returns 'Nothing'.
 getCommand :: Printer p => State p -> ReadLineT IO Command
-getCommand st
+getCommand _
   = parseCommand `fmap` maybe ":quit" id `fmap` readLine "> "
 
 -- | Tail-recursively calls 'interpreterEx' and clears 'errorRange'
