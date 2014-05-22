@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp #-}
+{-# LANGUAGE CPP, GeneralizedNewtypeDeriving #-}
 ------------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
 --
@@ -10,51 +10,61 @@
     Module that exports readline functionality
 -}
 -----------------------------------------------------------------------------
-module Platform.ReadLine( ReadLineT, runReadLineT, readLine
+module Platform.ReadLine( InputT, MonadException, InputM(..), runInput
                         ) where
 
 #define CLI_HASKELINE 2
+
+import Control.Applicative
+import Control.Monad.Reader
+import Control.Monad.IO.Class ()
 
 #if CLI == CLI_HASKELINE
 
 import System.Console.Haskeline
 
-type ReadLineT m a = InputT m a
-
-runReadLineT :: ReadLineT IO a -> IO a
-runReadLineT
+runInput :: MonadException m => InputT m a -> m a
+runInput
   = runInputT defaultSettings
 
--- | TODO: read multiple lines
-readLine     :: String -> ReadLineT IO (Maybe String)
-readLine prompt
-  = getInputLine prompt
+
+instance (MonadIO m, MonadException m) => InputM (InputT m) where
+  readLine = getInputLine
 
 #else
 
 import System.IO
 
-type ReadLineT m a = m a
+newtype InputT m a
+      = InputT (m a)
+      deriving (Functor, Applicative, Monad, MonadIO, MonadException)
 
-runReadLineT :: ReadLineT IO a -> IO a
-runReadLineT io
-  = io
+runInput :: InputT m a -> m a
+runInput (InputT m)
+  = m
 
-readLine :: String -> ReadLineT IO (Maybe String)
-readLine prompt
-  = do s <- readLines
-       return (Just s)
-  where
-    putPrompt
-      = do putStr prompt
-           hFlush stdout
-    readLines
-      = do putPrompt
-           line <- getLine
-           case reverse line of
-             []       -> readLines
-             '\\' : t -> do line2 <- readLines
-                            return (reverse t ++ "\n" ++ line2)
-             _        -> return line
+class (MonadIO m) => MonadException m
+instance MonadException IO
+instance (MonadIO m) => MonadException (ReaderT p m)
+
+instance (MonadIO m, MonadException m) => InputM (InputT m) where
+  readLine prompt
+    = liftIO $ do s <- readLines
+                  return (Just s)
+    where
+      putPrompt
+        = do putStr prompt
+             hFlush stdout
+      readLines
+        = do putPrompt
+             line <- getLine
+             case reverse line of
+               []       -> readLines
+               '\\' : t -> do line2 <- readLines
+                              return (reverse t ++ "\n" ++ line2)
+               _        -> return line
 
 #endif
+
+class (MonadIO m, MonadException m) => InputM m where
+  readLine :: String -> m (Maybe String)

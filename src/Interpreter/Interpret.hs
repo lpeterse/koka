@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 ------------------------------------------------------------------------------
 -- Copyright 2012 Microsoft Corporation.
 --
@@ -20,11 +21,14 @@ import System.Exit                 ( ExitCode(..) )
 import Data.List                   ( isPrefixOf )
 import Data.Char                   ( isSpace )
 import Control.Monad
+import Control.Monad.Reader        ( ReaderT, runReaderT )
 import Control.Monad.IO.Class      ( MonadIO, liftIO )
+import Control.Monad.Trans.Class   ( lift )
+import Control.Applicative         ( Applicative )
 
-import Platform.ReadLine      ( ReadLineT, runReadLineT, readLine )
+import Platform.ReadLine      ( InputT, InputM(..), MonadException, runInput)
 import Lib.PPrint
-import Lib.Printer            ( Printer(..) )
+import Lib.Printer            ( Printer(..), PrinterM(..) )
 import Common.Failure         ( catchIO )
 import Common.ColorScheme
 import Common.File            ( joinPath )
@@ -68,6 +72,18 @@ import Interpreter.Message    ( message
 import Interpreter.Quote      ( messageQuote )
 import Interpreter.Editor     ( runEditor )
 
+newtype Interpreter p a
+      = Interpreter (ReaderT p (InputT IO) a)
+      deriving (Functor, Applicative, Monad, PrinterM, MonadIO, MonadException)
+
+instance InputM (Interpreter p) where
+  readLine s = Interpreter ( lift $ readLine s )
+
+runInterpreter :: (Printer p) => p -> Interpreter p a -> IO a
+runInterpreter p (Interpreter m)
+  = runInput (runReaderT m p)
+
+
 io :: MonadIO m => IO a -> m a
 io = liftIO
 
@@ -82,15 +98,15 @@ interpret :: Printer p => p -- ^ supplies 'IO' actions for (coloured) output to 
              -> [FilePath]  -- ^ files to load initially
              -> IO ()       -- ^
 interpret printer' flags0 files'
-  = runReadLineT
+  = runInterpreter printer'
       $ do io $ messageHeader st
            err <- io $ loadFilesErr
                          (terminal st)
                          st { flags = flags0 { showCore = False, showAsmCSharp = False } }
                          [ show nameSystemCore ]
             -- FIXME: What does this catch? Why not returning it?
-            `catchIO` \msg -> do messageError st msg;
-                                 return $ errorMsg $ ErrorGeneral rangeNull (text msg)
+            --`catchIO` \msg -> do messageError st msg;
+            --                     return $ errorMsg $ ErrorGeneral rangeNull (text msg)
            case checkError err of
              Left msg    -> do io $ messageInfoLn st ("unable to load the " ++ show nameSystemCore ++ " module; standard functions are not available")
                                io $ messageEvaluation st
@@ -120,25 +136,25 @@ interpret printer' flags0 files'
 
 -- | A thin wrapper around the 'readLine' call that specifies the prompt
 --   and a fallback command (:quit) in case 'readLine' returns 'Nothing'.
-getCommand :: Printer p => State p -> ReadLineT IO Command
+getCommand :: (Printer p) => State p -> Interpreter p Command
 getCommand _
   = parseCommand `fmap` maybe ":quit" id `fmap` readLine "> "
 
 -- | Tail-recursively calls 'interpreterEx' and clears 'errorRange'
-interpreter :: Printer p => State p -> ReadLineT IO ()
+interpreter :: (Printer p) => State p -> Interpreter p ()
 interpreter st
   = do interpreterEx st'
   where
     st' = st{ errorRange = Nothing }
 
 -- | Fetches a command and tail-recursively calls 'command' for evaluation
-interpreterEx :: Printer p => State p -> ReadLineT IO ()
+interpreterEx :: (Printer p) => State p -> Interpreter p ()
 interpreterEx st
   = do cmd <- getCommand st
        command st cmd
 
 -- | Interpret a command and (if not quit) recurses to 'interpreter'
-command :: Printer p => State p -> Command -> ReadLineT IO ()
+command :: (Printer p) => State p -> Command -> Interpreter p ()
 command st cmd
   = case cmd of
       Eval ln     -> do{ err <- io $ compileExpression (terminal st) (flags st) (loaded st) (Executable nameExpr ()) (program st) bigLine ln
@@ -253,7 +269,7 @@ command st cmd
                        ; interpreterEx st
                        }
 
-      Show showcmd-> do{ io $ interpretShowCommand st showcmd
+      Show showcmd-> do{ interpretShowCommand st showcmd
                        ; interpreterEx st
                        }
       
@@ -266,7 +282,7 @@ command st cmd
     lineNo st'
       = bigLine + (length (defines st') + 1)
 
-    loadFiles :: Printer p => Terminal -> State p -> State p -> [FilePath] -> ReadLineT IO ()
+    loadFiles :: (Printer p) => Terminal -> State p -> State p -> [FilePath] -> Interpreter p ()
     loadFiles term originalSt startSt files'
       = do err <- io $ loadFilesErr term startSt files'
            case checkError err of
@@ -307,9 +323,9 @@ command st cmd
     -}
 
 -- | Interpret a show command.
-interpretShowCommand :: Printer p => State p -> ShowCommand -> IO ()
+interpretShowCommand :: (Printer p) => State p -> ShowCommand -> Interpreter p ()
 interpretShowCommand st cmd
-  = case cmd of
+  = io $ case cmd of
       ShowHelp
         -> do messagePrettyLn st $ commandHelp $ colorSchemeFromFlags $ flags st
               showEnv (flags st) (printer st)
@@ -380,11 +396,11 @@ interpretShowCommand st cmd
     loadedDiff _diff get
       = get (loaded st)
 
-    lastSourceFull :: Printer p => State p -> IO Source
+    lastSourceFull :: (Printer p) => State p -> IO Source
     lastSourceFull st'
       = if (isSourceNull lastSource || not (null (sourceText lastSource)))
           then return lastSource
-          else do txt <- readInput (sourceName lastSource)
+          else do txt <- io $ readInput (sourceName lastSource)
                             `catchIO` (\msg -> do{ messageError st' msg; return bstringEmpty })
                   return (lastSource{ sourceBString = txt })
       where
@@ -425,33 +441,33 @@ terminal st
       ( messagePrettyLn st )
 
 -- | TODO: document
-checkInfer ::  Printer p => State p -> Bool -> Error Loaded -> (Loaded -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer ::  (Printer p) => State p -> Bool -> Error Loaded -> (Loaded -> Interpreter p ()) -> Interpreter p ()
 checkInfer st = checkInferWith st id
 
 -- | TODO: document
-checkInfer2 :: Printer p => State p -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInfer2 :: (Printer p) => State p -> Bool -> Error (t, Loaded) -> ((t, Loaded) -> Interpreter p ()) -> Interpreter p ()
 checkInfer2 st = checkInferWith st (\(_,c) -> c)
 
 -- | TODO: document
-checkInferWith :: Printer p => State p -> (a -> Loaded) -> Bool -> Error a -> (a -> ReadLineT IO ()) -> ReadLineT IO ()
+checkInferWith :: (Printer p) => State p -> (a -> Loaded) -> Bool -> Error a -> (a -> Interpreter p ()) -> Interpreter p ()
 checkInferWith st _getLoaded showMarker err f
   = case checkError err of
-      Left msg  -> do io $ when showMarker (maybeMessageMarker st (getRange msg))
+      Left msg  -> do when showMarker (maybeMessageMarker st (getRange msg))
                       io $ messageErrorMsgLnLn st msg
                       interpreterEx st{ errorRange = Just (getRange msg) }
       Right (x,ws)
                 -> do let warnings = ws -- modWarnings (loadedModule ld)
-                      io $ when (not (null warnings))
+                      when (not (null warnings))
                         (do let msg = ErrorWarning warnings ErrorZero
                             when showMarker (maybeMessageMarker st (getRange msg))
-                            messageErrorMsgLnLn st msg)
+                            io $ messageErrorMsgLnLn st msg)
                       f x
 
 -- | TODO: document
-maybeMessageMarker :: Printer p => State p -> Range -> IO ()
+maybeMessageMarker :: (Printer p) => State p -> Range -> Interpreter p ()
 maybeMessageMarker st rng
   = if (lineNo == posLine (rangeStart rng) || posLine (rangeStart rng) == bigLine)
-     then messageMarker st rng
+     then io $ messageMarker st rng
      else return ()
   where
     lineNo :: Int

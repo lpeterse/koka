@@ -23,6 +23,8 @@ module Lib.Printer(
               , withHtmlPrinter, withHtmlPrinter
                 -- * Misc.
               , ansiWithColor
+                -- * Printer Monad
+              , PrinterM(..)
               ) where
 
 import Data.List( intersperse )
@@ -36,6 +38,9 @@ import qualified Platform.Console as Con
 import Data.Monoid (mappend, mconcat)
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
+
+import Control.Monad.Reader
+import Control.Monad.IO.Class
 
 import Debug.Trace
 
@@ -60,6 +65,36 @@ class Printer p where
   setBackColor    :: p -> Color -> IO ()
   setReverse      :: p -> Bool -> IO ()
   setUnderline    :: p -> Bool -> IO ()
+
+class PrinterM m where
+  pWrite           :: String -> m ()
+  pWriteText       :: T.Text -> m ()
+  pWriteLn         :: String -> m ()
+  pWriteTextLn     :: T.Text -> m ()
+  pFlush           :: m ()
+  pWithColor       :: Color  -> IO a -> m a
+  pWithBackColor   :: Color  -> IO a -> m a
+  pWithReverse     :: Bool   -> IO a -> m a
+  pWithUnderline   :: Bool   -> IO a -> m a
+  pSetColor        :: Color  -> m ()
+  pSetBackColor    :: Color  -> m ()
+  pSetReverse      :: Bool   -> m ()
+  pSetUnderline    :: Bool   -> m ()
+
+instance (Printer p, MonadIO m) => PrinterM (ReaderT p m) where
+  pWrite           x = ask >>= \p-> liftIO (write p x)
+  pWriteText       x = ask >>= \p-> liftIO (writeText p x)
+  pWriteLn         x = ask >>= \p-> liftIO (writeLn p x)
+  pWriteTextLn     x = ask >>= \p-> liftIO (writeTextLn p x)
+  pFlush             = ask >>= \p-> liftIO (flush p)
+  pWithColor     x m = ask >>= \p-> liftIO (withColor p x m)
+  pWithBackColor x m = ask >>= \p-> liftIO (withBackColor p x m)
+  pWithReverse   x m = ask >>= \p-> liftIO (withReverse p x m)
+  pWithUnderline x m = ask >>= \p-> liftIO (withUnderline p x m)
+  pSetColor        x = ask >>= \p-> liftIO (setColor p x)
+  pSetBackColor    x = ask >>= \p-> liftIO (setBackColor p x)
+  pSetReverse      x = ask >>= \p-> liftIO (setReverse p x)
+  pSetUnderline    x = ask >>= \p-> liftIO (setUnderline p x)
 
 {--------------------------------------------------------------------------
   Interface
